@@ -7,8 +7,8 @@
 [Latest Version]: https://img.shields.io/crates/v/pushapp-cli.svg
 [crates.io]: https://crates.io/crates/pushapp-cli
 
-![GitHub stars](https://img.shields.io/github/stars/flaviodelgrosso/pushapp)
-![GitHub downloads](https://img.shields.io/github/downloads/flaviodelgrosso/pushapp/total)
+![GitHub Repo stars](https://img.shields.io/github/stars/flaviodelgrosso/pushapp?style=flat)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/flaviodelgrosso/pushapp/total)
 
 ![image](pushapp-cli.gif)
 

@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'npm-updates'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=npm-updates",
+                    "--package=npm-updates"
+                ],
+                "filter": {
+                    "name": "npm-updates",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'npm-updates'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=npm-updates",
+                    "--package=npm-updates"
+                ],
+                "filter": {
+                    "name": "npm-updates",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

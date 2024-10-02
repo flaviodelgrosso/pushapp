@@ -12,22 +12,26 @@ pub struct PackageInfo {
 
 impl Display for PackageInfo {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let current_ver = Version::parse(normalize_version(&self.current_version)).unwrap();
-    let latest_ver = Version::parse(normalize_version(&self.latest_version)).unwrap();
+    // Parse and normalize versions
+    let current_ver_result = Version::parse(normalize_version(&self.current_version));
+    let latest_ver_result = Version::parse(normalize_version(&self.latest_version));
 
-    let color = if latest_ver.major > current_ver.major {
-      "red"
-    } else if latest_ver.minor > current_ver.minor {
-      "blue"
-    } else {
-      "green"
+    // Handle parsing errors
+    let Ok(current_ver) = current_ver_result else {
+      return Err(std::fmt::Error);
     };
 
-    let colored_latest_version = match color {
-      "red" => self.latest_version.bright_red().bold(),
-      "blue" => self.latest_version.bright_yellow().bold(),
-      "green" => self.latest_version.bright_green().bold(),
-      _ => unreachable!(),
+    let Ok(latest_ver) = latest_ver_result else {
+      return Err(std::fmt::Error);
+    };
+
+    // Determine color based on version comparison
+    let colored_latest_version = if latest_ver.major > current_ver.major {
+      self.latest_version.bright_red().bold()
+    } else if latest_ver.minor > current_ver.minor {
+      self.latest_version.bright_yellow().bold()
+    } else {
+      self.latest_version.bright_green().bold()
     };
 
     write!(

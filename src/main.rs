@@ -16,14 +16,14 @@ use updater::check_updates;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-  let _ = Args::parse();
+  let args = Args::parse();
 
   let mut pkg_manager = PackageJsonManager::new();
   pkg_manager.locate_closest()?;
   pkg_manager.read()?;
 
   // Combine dependencies from package.json and devDependencies
-  let all_deps = match pkg_manager.combine_deps() {
+  let deps = match pkg_manager.collect_deps(&args) {
     Ok(deps) => deps,
     Err(e) => {
       eprintln!("{e}");
@@ -33,17 +33,20 @@ async fn main() -> Result<()> {
 
   println!(
     "📦 {}",
-    format!("Found {} total dependencies", all_deps.len())
+    format!("Collecting {} dependencies.", deps.len())
       .bright_green()
       .bold(),
   );
 
-  println!(
-    "🔍 {}",
-    "Checking for packages updates...".bright_yellow().bold(),
-  );
+  let message = if args.dev {
+    "Checking updates... (dev dependencies only)"
+  } else {
+    "Checking updates..."
+  };
 
-  check_updates(pkg_manager, all_deps).await?;
+  println!("🔍 {}", message.bright_yellow().bold());
+
+  check_updates(pkg_manager, deps).await?;
 
   Ok(())
 }

@@ -6,6 +6,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
 
+use crate::args::Args;
 use crate::fs_utils::{find_closest_file, read_json};
 use crate::package_info::PackageInfo;
 use crate::package_lock::PackageLock;
@@ -59,28 +60,25 @@ impl PackageJsonManager {
     }
   }
 
-  /// Combine both dependencies and devDependencies into one `HashMap`.
-  pub fn combine_deps(&self) -> Result<PackageDependencies> {
-    let mut all_deps = PackageDependencies::new();
+  /// Combine both dependencies and devDependencies into one `HashMap` if `dev` flag is not set.
+  pub fn collect_deps(&self, args: &Args) -> Result<PackageDependencies> {
+    let mut deps = PackageDependencies::new();
 
-    if let Some(deps) = &self.json.dependencies {
-      all_deps.extend(deps.to_owned());
+    if !args.dev {
+      if let Some(dependencies) = &self.json.dependencies {
+        deps.extend(dependencies.clone());
+      }
     }
 
-    if let Some(dev_deps) = &self.json.dev_dependencies {
-      all_deps.extend(dev_deps.to_owned());
+    if let Some(dev_dependencies) = &self.json.dev_dependencies {
+      deps.extend(dev_dependencies.clone());
     }
 
-    if all_deps.is_empty() {
-      return Err(anyhow!(
-        "{}",
-        "No dependencies or dev dependencies found."
-          .bright_red()
-          .bold()
-      ));
+    if deps.is_empty() {
+      return Err(anyhow!("{}", "No dependencies found.".bright_red().bold()));
     }
 
-    Ok(all_deps)
+    Ok(deps)
   }
 
   fn detect_package_manager() -> (String, String) {

@@ -13,15 +13,12 @@ use crate::{
   registry::RegistryClient,
 };
 
-pub async fn check_updates(
-  manager: PackageJsonManager,
-  all_deps: PackageDependencies,
-) -> Result<()> {
+pub async fn check_updates(manager: PackageJsonManager, deps: PackageDependencies) -> Result<()> {
   let client = Arc::new(RegistryClient::new());
 
   // Use FuturesUnordered for more efficient parallelism and error handling
   let mut tasks = FuturesUnordered::new();
-  for (name, version) in all_deps {
+  for (name, version) in deps {
     let client = Arc::clone(&client);
     tasks.push(task::spawn(async move {
       let update_info = get_update_info(&client, &name, &version).await;

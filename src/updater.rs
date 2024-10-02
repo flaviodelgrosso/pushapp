@@ -13,6 +13,8 @@ use crate::{
 };
 
 pub async fn check_updates(args: &Args, pkg_manager: &PackageJsonManager) -> Result<()> {
+  println!("🔍 {}", "Checking updates...".bright_yellow());
+
   let client = RegistryClient::new();
 
   let mut tasks: FuturesUnordered<_> = pkg_manager

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2024-10-02
+
+### 🚜 Refactor
+
+- Detect package manager from package json field
+
+### ⚙️ Miscellaneous Tasks
+
+- Readme update
+
 ## [1.1.0] - 2024-10-02
 
 ### 🚀 Features
@@ -17,6 +27,8 @@ All notable changes to this project will be documented in this file.
 
 - Update release workflow to include changelog and add pre-release-hook
 - Move renovate in .github folder
+- Release pushapp-cli version 1.1.0
+- Add CHANGELOG.md
 
 ## [1.0.1] - 2024-10-01
 

@@ -9,17 +9,17 @@ use tokio::process::Command;
 use crate::args::Args;
 use crate::fs_utils::{find_closest_file, read_json};
 use crate::package_info::PackageInfo;
-use crate::package_lock::PackageLock;
 
 pub type PackageDependencies = HashMap<String, String>;
 
 static PACKAGE_JSON_FILENAME: &str = "package.json";
 
 #[derive(Deserialize, Debug, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct PackageJson {
   pub dependencies: Option<PackageDependencies>,
-  #[serde(rename = "devDependencies")]
   pub dev_dependencies: Option<PackageDependencies>,
+  pub package_manager: Option<String>,
 }
 
 #[derive(Debug, Default)]
@@ -60,20 +60,25 @@ impl PackageJsonManager {
     }
   }
 
+  fn iter_deps(deps: &mut PackageDependencies, dependencies: &Option<PackageDependencies>) {
+    if let Some(dependencies) = dependencies {
+      deps.extend(dependencies.iter().map(|(k, v)| (k.clone(), v.clone())));
+    }
+  }
+
   /// Combine both dependencies and devDependencies into one `HashMap` if `dev` flag is not set.
   pub fn collect_deps(&self, args: &Args) -> Result<PackageDependencies> {
     let mut deps = PackageDependencies::new();
 
+    // Only include dependencies if not --dev flag is set
     if !args.dev {
-      if let Some(dependencies) = &self.json.dependencies {
-        deps.extend(dependencies.clone());
-      }
+      Self::iter_deps(&mut deps, &self.json.dependencies);
     }
 
-    if let Some(dev_dependencies) = &self.json.dev_dependencies {
-      deps.extend(dev_dependencies.clone());
-    }
+    // Always include dev dependencies
+    Self::iter_deps(&mut deps, &self.json.dev_dependencies);
 
+    // Return an error if no dependencies were collected
     if deps.is_empty() {
       return Err(anyhow!("{}", "No dependencies found.".bright_red().bold()));
     }
@@ -81,41 +86,45 @@ impl PackageJsonManager {
     Ok(deps)
   }
 
-  fn detect_package_manager() -> (String, String) {
-    // Array of tuples with lock file names and corresponding package managers
-    let lock_files = [
-      ("package-lock.json", PackageLock::Npm),
-      ("yarn.lock", PackageLock::Yarn),
-      ("pnpm-lock.yaml", PackageLock::Pnpm),
-      ("bun.lockb", PackageLock::Bun),
-    ];
+  /// Detect the package manager used in the project and return it with the install command.
+  fn detect_package_manager(&self) -> (String, String) {
+    let package_manager = self.json.package_manager.as_deref().unwrap_or("npm");
 
-    // Loop through lock files and return the first match
-    for (file, manager) in &lock_files {
-      if let Ok(true) = Path::new(file).try_exists() {
-        let command = match manager {
-          PackageLock::Npm => "install",
-          _ => "add",
-        };
-        return (manager.to_string(), command.to_string());
-      }
-    }
+    // Split at '@' and get the package manager name
+    let package_manager_name = package_manager.split('@').next().unwrap_or("npm");
 
-    // Default to Npm if no lock files are found
-    (PackageLock::Npm.to_string(), "install".to_string())
+    // Determine the command based on the package manager
+    let command = match package_manager_name {
+      "npm" => "install",
+      _ => "add",
+    };
+
+    (package_manager_name.to_string(), command.to_string())
   }
 
   pub async fn install_deps(&self, updates: Vec<PackageInfo>) -> Result<()> {
-    let (package_manager, command) = PackageJsonManager::detect_package_manager();
+    let (package_manager, command) = self.detect_package_manager();
 
     let install_args = updates
       .iter()
       .map(|package| format!("{}@{}", package.pkg_name, package.latest_version))
       .collect::<Vec<String>>();
 
+    #[cfg(not(debug_assertions))]
     let status = Command::new(package_manager)
       .arg(command)
       .args(install_args)
+      .status()
+      .await?;
+
+    #[cfg(debug_assertions)]
+    let status = Command::new("echo")
+      .arg(format!(
+        "Would have run: {} {} {}",
+        package_manager,
+        command,
+        install_args.join(" ")
+      ))
       .status()
       .await?;
 

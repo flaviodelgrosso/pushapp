@@ -2,7 +2,6 @@ mod args;
 mod fs_utils;
 mod package_info;
 mod package_json;
-mod package_lock;
 mod registry;
 mod updater;
 

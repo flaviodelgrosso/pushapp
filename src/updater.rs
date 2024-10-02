@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use anyhow::Result;
 use colored::Colorize;
 use futures::stream::{FuturesUnordered, StreamExt};
@@ -8,21 +6,22 @@ use semver::{Version, VersionReq};
 use tokio::task;
 
 use crate::{
+  args::Args,
   package_info::{normalize_version, PackageInfo},
-  package_json::{PackageDependencies, PackageJsonManager},
+  package_json::PackageJsonManager,
   registry::RegistryClient,
 };
 
-pub async fn check_updates(
-  pkg_manager: PackageJsonManager,
-  deps: PackageDependencies,
-) -> Result<()> {
-  let client = Arc::new(RegistryClient::new());
+pub async fn check_updates(args: &Args, pkg_manager: &PackageJsonManager) -> Result<()> {
+  let client = RegistryClient::new();
 
-  let mut tasks: FuturesUnordered<_> = deps
-    .into_iter()
+  let mut tasks: FuturesUnordered<_> = pkg_manager
+    .all_deps_iter(args)
     .map(|(name, version)| {
-      let client = Arc::clone(&client);
+      // TODO: Check better way than cloning...
+      let client = client.clone();
+      let name = name.clone();
+      let version = version.clone();
       task::spawn(async move {
         match get_update_info(&client, &name, &version).await {
           Ok(Some(info)) => Some(info),
@@ -30,9 +29,7 @@ pub async fn check_updates(
           Err(e) => {
             eprintln!(
               "{}",
-              format!("❌ Error checking updates for package {name}: {e}")
-                .bright_red()
-                .bold()
+              format!("❌ Error checking updates for package {name}: {e}").bright_red()
             );
             None
           }
@@ -49,9 +46,7 @@ pub async fn check_updates(
     } else if let Err(e) = result {
       eprintln!(
         "{}",
-        format!("Task failed to execute to completion while checking updates: {e}")
-          .bright_red()
-          .bold()
+        format!("Task failed to execute to completion while checking updates: {e}").bright_red()
       );
     }
   }
@@ -59,9 +54,7 @@ pub async fn check_updates(
   if updatable_packages.is_empty() {
     println!(
       "{}",
-      "Good news! All packages are up-to-date."
-        .bright_green()
-        .bold()
+      "Good news! All packages are up-to-date.".bright_green()
     );
     return Ok(());
   }
@@ -73,16 +66,14 @@ pub async fn check_updates(
       if selected.is_empty() {
         println!(
           "{}",
-          "No packages were selected for update."
-            .bright_yellow()
-            .bold()
+          "No packages were selected for update.".bright_yellow()
         );
       } else {
         pkg_manager.install_deps(selected).await?;
       }
     }
     None => {
-      println!("{}", "\nNo packages were updated.".bright_yellow().bold());
+      println!("{}", "\nNo packages were updated.".bright_yellow());
     }
   }
 
@@ -109,7 +100,7 @@ fn display_update_prompt(updatable_packages: Vec<PackageInfo>) -> Option<Vec<Pac
 }
 
 async fn get_update_info(
-  client: &Arc<RegistryClient>,
+  client: &RegistryClient,
   name: &str,
   current_version: &str,
 ) -> Result<Option<PackageInfo>> {

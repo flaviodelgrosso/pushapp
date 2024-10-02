@@ -33,11 +33,13 @@ Run the following command in your Node.js project directory:
 pushapp
 ```
 
-## Flags
+## Flag options
 
-- `--help` or `-h` - Display help information
-- `--version` or `-V` - Display version information
-- `--dev` or `-D` - Update only devDependencies
+- `-d`, `--development` - Check only `devDependencies`
+- `-p`, `--production` - Check only `dependencies`
+- `-o`, `--optional` - Check only `optionalDependencies`
+- `-h`, `--help` - Display help information
+- `-V`, `--version` - Display version information
 
 ## License
 
@@ -45,4 +47,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-- Flavio Delgrosso
+Flavio Delgrosso

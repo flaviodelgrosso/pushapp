@@ -21,31 +21,9 @@ async fn main() -> Result<()> {
   pkg_manager.locate_closest()?;
   pkg_manager.read()?;
 
-  // Combine dependencies from package.json and devDependencies
-  let deps = match pkg_manager.collect_deps(&args) {
-    Ok(deps) => deps,
-    Err(e) => {
-      eprintln!("{e}");
-      return Ok(());
-    }
-  };
+  println!("🔍 {}", "Checking updates...".bright_yellow());
 
-  println!(
-    "📦 {}",
-    format!("Collecting {} dependencies.", deps.len())
-      .bright_green()
-      .bold(),
-  );
-
-  let message = if args.dev {
-    "Checking updates... (dev dependencies only)"
-  } else {
-    "Checking updates..."
-  };
-
-  println!("🔍 {}", message.bright_yellow().bold());
-
-  check_updates(pkg_manager, deps).await?;
+  check_updates(&args, &pkg_manager).await?;
 
   Ok(())
 }

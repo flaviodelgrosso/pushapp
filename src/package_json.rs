@@ -1,4 +1,4 @@
-use anyhow::{anyhow, format_err, Result};
+use anyhow::{format_err, Result};
 use colored::Colorize;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -19,6 +19,7 @@ static PACKAGE_JSON_FILENAME: &str = "package.json";
 pub struct PackageJson {
   pub dependencies: Option<PackageDependencies>,
   pub dev_dependencies: Option<PackageDependencies>,
+  pub optional_dependencies: Option<PackageDependencies>,
   pub package_manager: Option<String>,
 }
 
@@ -60,30 +61,41 @@ impl PackageJsonManager {
     }
   }
 
-  fn iter_deps(deps: &mut PackageDependencies, dependencies: &Option<PackageDependencies>) {
-    if let Some(dependencies) = dependencies {
-      deps.extend(dependencies.iter().map(|(k, v)| (k.clone(), v.clone())));
-    }
+  fn get_deps_count(&self) -> usize {
+    [
+      &self.json.dependencies,
+      &self.json.dev_dependencies,
+      &self.json.optional_dependencies,
+    ]
+    .iter()
+    .filter_map(|deps| deps.as_ref().map(HashMap::len))
+    .sum()
   }
 
-  /// Combine both dependencies and devDependencies into one `HashMap` if `dev` flag is not set.
-  pub fn collect_deps(&self, args: &Args) -> Result<PackageDependencies> {
-    let mut deps = PackageDependencies::new();
+  pub fn all_deps_iter(&self, args: &Args) -> impl Iterator<Item = (&String, &String)> {
+    println!(
+      "{}",
+      format!("📦 Found {} dependencies.", self.get_deps_count()).bright_green()
+    );
 
-    // Only include dependencies if not --dev flag is set
-    if !args.dev {
-      Self::iter_deps(&mut deps, &self.json.dependencies);
+    // Build a vector of the selected dependencies based on CLI arguments
+    let mut selected_deps: Vec<&Option<PackageDependencies>> = Vec::new();
+
+    if args.production || (!args.development && !args.optional) {
+      selected_deps.push(&self.json.dependencies);
     }
 
-    // Always include dev dependencies
-    Self::iter_deps(&mut deps, &self.json.dev_dependencies);
-
-    // Return an error if no dependencies were collected
-    if deps.is_empty() {
-      return Err(anyhow!("{}", "No dependencies found.".bright_red().bold()));
+    if args.development || (!args.production && !args.optional) {
+      selected_deps.push(&self.json.dev_dependencies);
     }
 
-    Ok(deps)
+    if args.optional || (!args.production && !args.development) {
+      selected_deps.push(&self.json.optional_dependencies);
+    }
+
+    selected_deps
+      .into_iter()
+      .flat_map(|deps_option| deps_option.iter().flat_map(|deps| deps.iter()))
   }
 
   /// Detect the package manager used in the project and return it with the install command.
@@ -129,7 +141,7 @@ impl PackageJsonManager {
       .await?;
 
     if status.success() {
-      println!("{}", "Packages successfully updated!".bright_green().bold());
+      println!("{}", "Packages successfully updated!".bright_green());
     } else {
       anyhow::bail!("Failed to update packages");
     }

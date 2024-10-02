@@ -25,7 +25,7 @@ pub async fn check_updates(args: &Args, pkg_manager: &PackageJsonManager) -> Res
       let name = name.clone();
       let version = version.clone();
       task::spawn(async move {
-        match get_update_info(&client, &name, &version).await {
+        match get_package_info(&client, &name, &version).await {
           Ok(Some(info)) => Some(info),
           Ok(None) => None,
           Err(e) => {
@@ -101,7 +101,7 @@ fn display_update_prompt(updatable_packages: Vec<PackageInfo>) -> Option<Vec<Pac
   }
 }
 
-async fn get_update_info(
+async fn get_package_info(
   client: &RegistryClient,
   name: &str,
   current_version: &str,

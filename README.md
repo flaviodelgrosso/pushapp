@@ -19,7 +19,7 @@
 - [x] Interactive packages selection
 - [x] Autocomplete package search
 - [x] Colored updatable packages based on semver diff
-- [x] CLI utility flags (e.g. --help, --only-dev)
+- [x] CLI utility flags
 - [ ] Monorepo support ⚠️
 
 ## Installation
@@ -40,7 +40,7 @@ pushapp
 
 - `--help` or `-h` - Display help information
 - `--version` or `-V` - Display version information
-- `--only-dev` or `-D` - Update only devDependencies
+- `--dev` or `-D` - Update only devDependencies
 
 ## License
 

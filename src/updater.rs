@@ -13,44 +13,46 @@ use crate::{
   registry::RegistryClient,
 };
 
-pub async fn check_updates(manager: PackageJsonManager, deps: PackageDependencies) -> Result<()> {
+pub async fn check_updates(
+  pkg_manager: PackageJsonManager,
+  deps: PackageDependencies,
+) -> Result<()> {
   let client = Arc::new(RegistryClient::new());
 
-  // Use FuturesUnordered for more efficient parallelism and error handling
-  let mut tasks = FuturesUnordered::new();
-  for (name, version) in deps {
-    let client = Arc::clone(&client);
-    tasks.push(task::spawn(async move {
-      let update_info = get_update_info(&client, &name, &version).await;
-      match update_info {
-        Ok(Some(info)) => Some(info),
-        Ok(None) => None,
-        Err(e) => {
-          eprintln!(
-            "{}",
-            format!("❌ Error checking updates for package {name}: {e}")
-              .bright_red()
-              .bold()
-          );
-          None
+  let mut tasks: FuturesUnordered<_> = deps
+    .into_iter()
+    .map(|(name, version)| {
+      let client = Arc::clone(&client);
+      task::spawn(async move {
+        match get_update_info(&client, &name, &version).await {
+          Ok(Some(info)) => Some(info),
+          Ok(None) => None,
+          Err(e) => {
+            eprintln!(
+              "{}",
+              format!("❌ Error checking updates for package {name}: {e}")
+                .bright_red()
+                .bold()
+            );
+            None
+          }
         }
-      }
-    }));
-  }
+      })
+    })
+    .collect();
 
   let mut updatable_packages: Vec<PackageInfo> = vec![];
 
-  // Await and process results concurrently
   while let Some(result) = tasks.next().await {
-    match result {
-      Ok(Some(update_info)) => updatable_packages.push(update_info),
-      Ok(None) => {} // No update available, do nothing
-      Err(e) => eprintln!(
+    if let Ok(Some(update_info)) = result {
+      updatable_packages.push(update_info);
+    } else if let Err(e) = result {
+      eprintln!(
         "{}",
         format!("Task failed to execute to completion while checking updates: {e}")
           .bright_red()
           .bold()
-      ),
+      );
     }
   }
 
@@ -64,24 +66,24 @@ pub async fn check_updates(manager: PackageJsonManager, deps: PackageDependencie
     return Ok(());
   }
 
-  // Sort the updateable packages by name for better user experience
   updatable_packages.sort_by(|a, b| a.pkg_name.cmp(&b.pkg_name));
 
-  // Display prompt for selecting packages to update
-  let selected_packages = display_update_prompt(updatable_packages);
-  if let Some(selected) = selected_packages {
-    if selected.is_empty() {
-      println!(
-        "{}",
-        "No packages were selected for update."
-          .bright_yellow()
-          .bold()
-      );
-      return Ok(());
+  match display_update_prompt(updatable_packages) {
+    Some(selected) => {
+      if selected.is_empty() {
+        println!(
+          "{}",
+          "No packages were selected for update."
+            .bright_yellow()
+            .bold()
+        );
+      } else {
+        pkg_manager.install_deps(selected).await?;
+      }
     }
-    manager.install_deps(selected).await?;
-  } else {
-    println!("{}", "\nNo packages were updated.".bright_yellow().bold());
+    None => {
+      println!("{}", "\nNo packages were updated.".bright_yellow().bold());
+    }
   }
 
   Ok(())

@@ -14,13 +14,13 @@
 
 ## Features
 
-- [x] Package.json dependencies updater
+- [x] Ultra fast dependencies updater
 - [x] Support for npm, pnpm, yarn and bun
 - [x] Interactive packages selection
 - [x] Autocomplete package search
 - [x] Colored updatable packages based on semver diff
-- [ ] Monorepo support
-- [ ] CLI utility flags (e.g. --help, --only-dev)
+- [x] CLI utility flags (e.g. --help, --only-dev)
+- [ ] Monorepo support ⚠️
 
 ## Installation
 
@@ -35,6 +35,12 @@ Run the following command in your Node.js project directory:
 ```bash
 pushapp
 ```
+
+## Flags
+
+- `--help` or `-h` - Display help information
+- `--version` or `-V` - Display version information
+- `--only-dev` or `-D` - Update only devDependencies
 
 ## License
 

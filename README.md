@@ -2,19 +2,16 @@
 
 ⚡ Ultra fast dependencies updater for Node.js written in Rust! ⚡
 
-[![Latest Version]][crates.io]
+[![Latest Version]][crates.io] ![Crates.io Downloads](https://img.shields.io/crates/d/pushapp-cli) ![GitHub Repo stars](https://img.shields.io/github/stars/flaviodelgrosso/pushapp?style=flat)
 
 [Latest Version]: https://img.shields.io/crates/v/pushapp-cli.svg
 [crates.io]: https://crates.io/crates/pushapp-cli
-
-![GitHub Repo stars](https://img.shields.io/github/stars/flaviodelgrosso/pushapp?style=flat)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/flaviodelgrosso/pushapp/total)
 
 ![image](pushapp-cli.gif)
 
 ## Features
 
-- [x] Ultra fast dependencies updater
+- [x] Ultra fast
 - [x] Support for npm, pnpm, yarn and bun
 - [x] Interactive packages selection
 - [x] Autocomplete package search

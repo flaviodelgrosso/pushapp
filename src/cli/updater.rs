@@ -1,6 +1,6 @@
 use anyhow::Result;
 use colored::Colorize;
-use futures::stream::{FuturesUnordered, StreamExt};
+use futures::future::join_all;
 use semver::{Version, VersionReq};
 use tokio::task::{self, JoinHandle};
 
@@ -46,60 +46,7 @@ impl UpdateChecker {
     self.handle_updatable_packages(updatable_packages).await
   }
 
-  async fn process_update_results(
-    &self,
-    mut tasks: FuturesUnordered<JoinHandle<Option<PackageInfo>>>,
-  ) -> Vec<PackageInfo> {
-    let mut updatable_packages = vec![];
-
-    while let Some(result) = tasks.next().await {
-      if let Ok(Some(update_info)) = result {
-        updatable_packages.push(update_info);
-      } else if let Err(e) = result {
-        eprintln!(
-          "{}",
-          format!("Task failed to execute to completion while checking updates: {e}").bright_red()
-        );
-      }
-    }
-
-    updatable_packages
-  }
-
-  async fn handle_updatable_packages(
-    &self,
-    mut updatable_packages: Vec<PackageInfo>,
-  ) -> Result<()> {
-    if updatable_packages.is_empty() {
-      println!(
-        "{}",
-        "Good news! All packages are up-to-date.".bright_green()
-      );
-      return Ok(());
-    }
-
-    updatable_packages.sort_by(|a, b| a.pkg_name.cmp(&b.pkg_name));
-
-    match display_update(updatable_packages) {
-      Some(selected) => {
-        if selected.is_empty() {
-          println!(
-            "{}",
-            "No packages were selected for update.".bright_yellow()
-          );
-        } else {
-          self.pkg_manager.install_deps(selected).await?;
-        }
-      }
-      None => {
-        println!("{}", "\nNo packages were updated.".bright_yellow());
-      }
-    }
-
-    Ok(())
-  }
-
-  fn fetch_updates(&self) -> FuturesUnordered<JoinHandle<Option<PackageInfo>>> {
+  fn fetch_updates(&self) -> Vec<JoinHandle<Option<PackageInfo>>> {
     self
       .pkg_manager
       .all_deps_iter(&self.args)
@@ -122,6 +69,55 @@ impl UpdateChecker {
         })
       })
       .collect()
+  }
+
+  async fn process_update_results(
+    &self,
+    tasks: Vec<JoinHandle<Option<PackageInfo>>>,
+  ) -> Vec<PackageInfo> {
+    // Use join_all to await all the task concurrently
+    join_all(tasks)
+      .await
+      .into_iter()
+      .filter_map(|res| match res {
+        Ok(Some(result)) => Some(result),
+        Ok(None) => None,
+        Err(e) => {
+          eprintln!("❌ Task failed to execute: {e}");
+          None
+        }
+      })
+      .collect()
+  }
+
+  async fn handle_updatable_packages(
+    &self,
+    mut updatable_packages: Vec<PackageInfo>,
+  ) -> Result<()> {
+    if updatable_packages.is_empty() {
+      println!("{}", "There are no updates available.".bright_blue());
+      return Ok(());
+    }
+
+    updatable_packages.sort_by(|a, b| a.pkg_name.cmp(&b.pkg_name));
+
+    match display_update(updatable_packages) {
+      Some(selected) => {
+        if selected.is_empty() {
+          println!(
+            "{}",
+            "No packages were selected for update.".bright_yellow()
+          );
+        } else {
+          self.pkg_manager.install_deps(selected).await?;
+        }
+      }
+      None => {
+        println!("{}", "\nNo packages were updated.".bright_yellow());
+      }
+    }
+
+    Ok(())
   }
 }
 

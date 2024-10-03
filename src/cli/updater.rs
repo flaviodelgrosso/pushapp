@@ -1,14 +1,14 @@
 use anyhow::Result;
 use colored::Colorize;
 use futures::stream::{FuturesUnordered, StreamExt};
-use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 use semver::{Version, VersionReq};
-use tokio::task;
+use tokio::task::{self, JoinHandle};
 
-use crate::cli::{
+use super::{
   args::Args,
   package_info::{normalize_version, PackageInfo},
   package_json::PackageJsonManager,
+  prompt::display_update,
   registry::RegistryClient,
 };
 
@@ -31,7 +31,7 @@ impl UpdateChecker {
   pub async fn run(&self) -> Result<()> {
     println!("🔍 {}", "Checking updates...".bright_yellow());
 
-    let tasks = self.fetch_update_tasks();
+    let tasks = self.fetch_updates();
     if tasks.is_empty() {
       println!("{}", "📦 No dependencies found.".bright_red());
       return Ok(());
@@ -48,7 +48,7 @@ impl UpdateChecker {
 
   async fn process_update_results(
     &self,
-    mut tasks: FuturesUnordered<task::JoinHandle<Option<PackageInfo>>>,
+    mut tasks: FuturesUnordered<JoinHandle<Option<PackageInfo>>>,
   ) -> Vec<PackageInfo> {
     let mut updatable_packages = vec![];
 
@@ -80,7 +80,7 @@ impl UpdateChecker {
 
     updatable_packages.sort_by(|a, b| a.pkg_name.cmp(&b.pkg_name));
 
-    match display_update_prompt(updatable_packages) {
+    match display_update(updatable_packages) {
       Some(selected) => {
         if selected.is_empty() {
           println!(
@@ -99,7 +99,7 @@ impl UpdateChecker {
     Ok(())
   }
 
-  fn fetch_update_tasks(&self) -> FuturesUnordered<task::JoinHandle<Option<PackageInfo>>> {
+  fn fetch_updates(&self) -> FuturesUnordered<JoinHandle<Option<PackageInfo>>> {
     self
       .pkg_manager
       .all_deps_iter(&self.args)
@@ -125,31 +125,12 @@ impl UpdateChecker {
   }
 }
 
-fn display_update_prompt(updatable_packages: Vec<PackageInfo>) -> Option<Vec<PackageInfo>> {
-  let formatter: MultiOptionFormatter<'_, PackageInfo> =
-    &|a| format!("{} package(s) selected", a.len());
-
-  let prompt_message = format!(
-    "Choose packages to update ({} total):",
-    updatable_packages.len()
-  );
-
-  let prompt = MultiSelect::new(&prompt_message, updatable_packages)
-    .with_formatter(&formatter)
-    .prompt();
-
-  match prompt {
-    Ok(selected) => Some(selected),
-    Err(_) => None,
-  }
-}
-
 async fn get_package_info(
   client: &RegistryClient,
   name: &str,
   current_version: &str,
 ) -> Result<Option<PackageInfo>> {
-  let latest_version = client.get_update_version(name, current_version).await?;
+  let latest_version = client.get_latest_version(name, current_version).await?;
 
   if can_update(current_version, &latest_version)? {
     Ok(Some(PackageInfo {

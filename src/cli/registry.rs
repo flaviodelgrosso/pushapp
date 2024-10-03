@@ -41,7 +41,7 @@ impl RegistryClient {
     Ok(response)
   }
 
-  pub async fn get_update_version(&self, name: &str, current_version: &str) -> Result<String> {
+  pub async fn get_latest_version(&self, name: &str, current_version: &str) -> Result<String> {
     let dist_tags = self.get_dist_tags(name).await?;
 
     // if the current version includes a prerelease tag, check if the

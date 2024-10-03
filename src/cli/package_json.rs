@@ -6,7 +6,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
 
-use crate::cli::{
+use super::{
   args::Args,
   fs_utils::{find_closest_file, read_json},
   package_info::PackageInfo,

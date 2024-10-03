@@ -10,7 +10,7 @@ use clap::Parser;
 
 use args::Args;
 use package_json::PackageJsonManager;
-use updater::check_updates;
+use updater::UpdateChecker;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,7 +20,8 @@ async fn main() -> Result<()> {
   pkg_manager.locate_closest()?;
   pkg_manager.read()?;
 
-  check_updates(&args, &pkg_manager).await?;
+  let update_checker = UpdateChecker::new(args, pkg_manager);
+  update_checker.run().await?;
 
   Ok(())
 }

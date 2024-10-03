@@ -61,23 +61,7 @@ impl PackageJsonManager {
     }
   }
 
-  fn get_deps_count(&self) -> usize {
-    [
-      &self.json.dependencies,
-      &self.json.dev_dependencies,
-      &self.json.optional_dependencies,
-    ]
-    .iter()
-    .filter_map(|deps| deps.as_ref().map(HashMap::len))
-    .sum()
-  }
-
   pub fn all_deps_iter(&self, args: &Args) -> impl Iterator<Item = (&String, &String)> {
-    println!(
-      "{}",
-      format!("📦 Found {} dependencies.", self.get_deps_count()).bright_green()
-    );
-
     // Build a vector of the selected dependencies based on CLI arguments
     let mut selected_deps: Vec<&Option<PackageDependencies>> = Vec::new();
 

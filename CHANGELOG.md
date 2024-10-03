@@ -5,12 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2024-10-03
+
+### Added
+- Add prompt module by @flaviodelgrosso
+
+### Changed
+- Use `join_all` in `process_update_results` fn by @flaviodelgrosso
+- Group modules in cli folder by @flaviodelgrosso
+- Implement UpdateChecker struct and chunked functions for better testing and readability by @flaviodelgrosso
+
 ## [1.2.0] - 2024-10-03
 
 ### Added
 - Feat: add new flag options to check only prod or optional deps by @flaviodelgrosso
 
 ### Changed
+- Update changelog and cliff config by @flaviodelgrosso
 - Release pushapp-cli version 1.2.0 by @flaviodelgrosso
 - Rename get_update_info to get_package_info for clarity by @flaviodelgrosso
 - Update CHANGELOG.md and add cliff.toml configuration by @flaviodelgrosso
@@ -55,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 🚀 first commit by @flaviodelgrosso
 
+[1.2.1]: https://github.com/flaviodelgrosso/pushapp/compare/v1.2.0..1.2.1
 [1.2.0]: https://github.com/flaviodelgrosso/pushapp/compare/v1.1.1..v1.2.0
 [1.1.1]: https://github.com/flaviodelgrosso/pushapp/compare/v1.1.0..v1.1.1
 [1.1.0]: https://github.com/flaviodelgrosso/pushapp/compare/v1.0.1..v1.1.0

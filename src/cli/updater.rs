@@ -5,7 +5,7 @@ use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 use semver::{Version, VersionReq};
 use tokio::task;
 
-use crate::{
+use crate::cli::{
   args::Args,
   package_info::{normalize_version, PackageInfo},
   package_json::PackageJsonManager,

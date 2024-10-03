@@ -1,16 +1,11 @@
-mod args;
-mod fs_utils;
-mod package_info;
-mod package_json;
-mod registry;
-mod updater;
+mod cli;
 
 use anyhow::Result;
 use clap::Parser;
 
-use args::Args;
-use package_json::PackageJsonManager;
-use updater::UpdateChecker;
+use cli::args::Args;
+use cli::package_json::PackageJsonManager;
+use cli::updater::UpdateChecker;
 
 #[tokio::main]
 async fn main() -> Result<()> {

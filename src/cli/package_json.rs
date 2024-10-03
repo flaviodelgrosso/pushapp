@@ -6,9 +6,11 @@ use std::env;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
 
-use crate::args::Args;
-use crate::fs_utils::{find_closest_file, read_json};
-use crate::package_info::PackageInfo;
+use crate::cli::{
+  args::Args,
+  fs_utils::{find_closest_file, read_json},
+  package_info::PackageInfo,
+};
 
 pub type PackageDependencies = HashMap<String, String>;
 

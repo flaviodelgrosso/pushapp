@@ -14,7 +14,7 @@ use super::{
 
 pub type PackageDependencies = HashMap<String, String>;
 
-static PACKAGE_JSON_FILENAME: &str = "package.json";
+pub static PACKAGE_JSON_FILENAME: &str = "package.json";
 
 #[derive(Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
@@ -136,9 +136,13 @@ impl PackageJsonManager {
   }
 }
 
-#[test]
-fn test_spec_fields() {
-  let package_json_raw = r#"
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_spec_fields() {
+    let package_json_raw = r#"
     {
       "packageManager": "pnpm@9.10.0",
       "devDependencies": {
@@ -147,29 +151,30 @@ fn test_spec_fields() {
     }
   "#;
 
-  let json = serde_json::from_str::<PackageJson>(package_json_raw).unwrap();
-  assert_eq!(json.package_manager, Some("pnpm@9.10.0".to_owned()));
-  assert_eq!(json.dependencies, None);
-  assert_eq!(
-    json.dev_dependencies,
-    Some(HashMap::from([("typescript".to_owned(), "*".to_owned())]))
-  );
-}
+    let json = serde_json::from_str::<PackageJson>(package_json_raw).unwrap();
+    assert_eq!(json.package_manager, Some("pnpm@9.10.0".to_owned()));
+    assert_eq!(json.dependencies, None);
+    assert_eq!(
+      json.dev_dependencies,
+      Some(HashMap::from([("typescript".to_owned(), "*".to_owned())]))
+    );
+  }
 
-#[test]
-fn test_detect_package_manager() {
-  let package_json = PackageJson {
-    package_manager: Some("pnpm@9.10.0".to_owned()),
-    ..Default::default()
-  };
+  #[test]
+  fn test_detect_package_manager() {
+    let package_json = PackageJson {
+      package_manager: Some("pnpm@9.10.0".to_owned()),
+      ..Default::default()
+    };
 
-  let manager = PackageJsonManager {
-    json: package_json,
-    ..Default::default()
-  };
+    let manager = PackageJsonManager {
+      json: package_json,
+      ..Default::default()
+    };
 
-  assert_eq!(
-    manager.detect_package_manager(),
-    ("pnpm".to_owned(), "add".to_owned())
-  );
+    assert_eq!(
+      manager.detect_package_manager(),
+      ("pnpm".to_owned(), "add".to_owned())
+    );
+  }
 }

@@ -35,3 +35,61 @@ where
     Err(error) => Err(format_err!(error)),
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::super::package_json::PACKAGE_JSON_FILENAME;
+  use super::*;
+  use std::io::Write;
+  use tempfile::tempdir;
+
+  #[test]
+  fn test_find_closest_file() {
+    let dir = tempdir().unwrap();
+    let file_path = dir.path().join(PACKAGE_JSON_FILENAME);
+    let mut file = File::create(&file_path).unwrap();
+    writeln!(file, "{{\"name\": \"test\"}}").unwrap();
+
+    let found_file = find_closest_file(PACKAGE_JSON_FILENAME, dir.path()).unwrap();
+    assert_eq!(found_file, file_path);
+  }
+
+  #[test]
+  fn test_find_closest_file_not_found() {
+    let dir = tempdir().unwrap();
+    let result = find_closest_file("non_existent_file.json", dir.path());
+    assert!(result.is_err());
+  }
+
+  #[test]
+  fn test_read_json() {
+    #[derive(serde::Deserialize, Debug, PartialEq)]
+    struct PackageJson {
+      name: String,
+    }
+
+    let dir = tempdir().unwrap();
+    let file_path = dir.path().join(PACKAGE_JSON_FILENAME);
+    let mut file = File::create(&file_path).unwrap();
+    writeln!(file, "{{\"name\": \"test\"}}").unwrap();
+
+    let json: PackageJson = read_json(file_path).unwrap();
+    assert_eq!(
+      json,
+      PackageJson {
+        name: "test".to_string()
+      }
+    );
+  }
+
+  #[test]
+  fn test_read_json_invalid_format() {
+    let dir = tempdir().unwrap();
+    let file_path = dir.path().join(PACKAGE_JSON_FILENAME);
+    let mut file = File::create(&file_path).unwrap();
+    writeln!(file, "invalid json").unwrap();
+
+    let result: Result<serde_json::Value> = read_json(file_path);
+    assert!(result.is_err());
+  }
+}

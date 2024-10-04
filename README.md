@@ -13,11 +13,17 @@
 
 - [x] Ultra fast
 - [x] Support for npm, pnpm, yarn and bun
-- [x] Interactive packages selection
-- [x] Autocomplete package search
+- [x] Interactive mode
+- [x] Autocomplete
 - [x] Colored updatable packages based on semver diff
 - [x] CLI utility flags
+
+## Roadmap
+
 - [ ] Monorepo support ⚠️
+- [ ] Check global packages ⚠️
+- [ ] Single packages update with filters ⚠️
+- [ ] Non-interactive mode with different display formatting and infos (publish time, semver grouping ) ⚠️
 
 ## Installation
 

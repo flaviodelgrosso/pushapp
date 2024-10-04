@@ -9,7 +9,7 @@ use tokio::task::{self, JoinHandle};
 use super::{
   args::Args,
   package_info::{normalize_version, PackageInfo},
-  package_json::PackageJsonManager,
+  package_json::{PackageDependencies, PackageJsonManager},
   prompt::display_update,
   registry::RegistryClient,
 };
@@ -33,7 +33,13 @@ impl UpdateChecker {
   pub async fn run(&self) -> Result<()> {
     println!("🔍 {}", "Checking updates...".bright_yellow());
 
-    let tasks = self.fetch_updates();
+    let deps = if self.args.global {
+      self::PackageJsonManager::get_global_deps()?
+    } else {
+      self.pkg_manager.get_local_deps(&self.args)
+    };
+
+    let tasks = self.fetch_updates(&deps);
     if tasks.is_empty() {
       println!("{}", "📦 No dependencies found.".bright_red());
       return Ok(());
@@ -45,13 +51,15 @@ impl UpdateChecker {
     );
 
     let updatable_packages = self.process_update_stream(tasks).await;
-    self.handle_updatable_packages(updatable_packages).await
+    self.handle_updatable_packages(updatable_packages)
   }
 
-  fn fetch_updates(&self) -> FuturesUnordered<JoinHandle<Option<PackageInfo>>> {
-    self
-      .pkg_manager
-      .all_deps_iter(&self.args)
+  fn fetch_updates(
+    &self,
+    deps: &PackageDependencies,
+  ) -> FuturesUnordered<JoinHandle<Option<PackageInfo>>> {
+    deps
+      .iter()
       .map(|(name, version)| {
         let client = Arc::clone(&self.client);
         let name = name.to_string();
@@ -93,10 +101,7 @@ impl UpdateChecker {
     pkg_infos
   }
 
-  async fn handle_updatable_packages(
-    &self,
-    mut updatable_packages: Vec<PackageInfo>,
-  ) -> Result<()> {
+  fn handle_updatable_packages(&self, mut updatable_packages: Vec<PackageInfo>) -> Result<()> {
     if updatable_packages.is_empty() {
       println!("{}", "There are no updates available.".bright_blue());
       return Ok(());
@@ -106,7 +111,7 @@ impl UpdateChecker {
 
     match display_update(updatable_packages) {
       Some(selected) => {
-        self.pkg_manager.install_deps(selected).await?;
+        self.pkg_manager.install_deps(&selected, &self.args)?;
       }
       None => {
         println!("{}", "\nNo packages were updated.".bright_yellow());

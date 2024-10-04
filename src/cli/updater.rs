@@ -106,14 +106,7 @@ impl UpdateChecker {
 
     match display_update(updatable_packages) {
       Some(selected) => {
-        if selected.is_empty() {
-          println!(
-            "{}",
-            "No packages were selected for update.".bright_yellow()
-          );
-        } else {
-          self.pkg_manager.install_deps(selected).await?;
-        }
+        self.pkg_manager.install_deps(selected).await?;
       }
       None => {
         println!("{}", "\nNo packages were updated.".bright_yellow());

@@ -5,68 +5,96 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2024-10-04
+
+### <!-- 0 -->🚀 Features
+- Add a new flag for checking global packages by @flaviodelgrosso
+- Add validator for package selection by @flaviodelgrosso
+
+### <!-- 4 -->⚡ Performance
+- Rollback to stream processing from `join_all` futures by @flaviodelgrosso
+- Use `FuturesUnordered` in `fetch_updates` and `process_update_results` fns by @flaviodelgrosso
+- Use atomic ref counter for client in UpdateChecker by @flaviodelgrosso
+
+### <!-- 5 -->🎨 Styling
+- Use table to show flag options in README.md by @flaviodelgrosso
+
+### <!-- 6 -->🧪 Testing
+- Add tests for fs_utils by @flaviodelgrosso
+- Add test for spec fields in package_json.rs by @flaviodelgrosso
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+- Add CODEOWNERS file for repository ownership by @flaviodelgrosso
+- Update commit parsers in cliff.toml by @flaviodelgrosso
+- Add some roadmap points in readme.md by @flaviodelgrosso
+
 ## [1.2.1] - 2024-10-03
 
-### Added
-- Add prompt module by @flaviodelgrosso
-
-### Changed
+### <!-- 2 -->🚜 Refactor
 - Use `join_all` in `process_update_results` fn by @flaviodelgrosso
 - Group modules in cli folder by @flaviodelgrosso
 - Implement UpdateChecker struct and chunked functions for better testing and readability by @flaviodelgrosso
 
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+- Release pushapp-cli version 1.2.1 by @flaviodelgrosso
+- Add prompt module by @flaviodelgrosso
+
 ## [1.2.0] - 2024-10-03
 
-### Added
+### <!-- 0 -->🚀 Features
 - Feat: add new flag options to check only prod or optional deps by @flaviodelgrosso
 
-### Changed
+### <!-- 2 -->🚜 Refactor
+- Rename get_update_info to get_package_info for clarity by @flaviodelgrosso
+- Move update check log to check_updates function by @flaviodelgrosso
+- Optimize check_updates code readability and performance by @flaviodelgrosso
+- Improve version parsing and error handling in PackageInfo display by @flaviodelgrosso
+
+### <!-- 3 -->📚 Documentation
+- Readme update by @flaviodelgrosso
+- Update README by @flaviodelgrosso
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
 - Update changelog and cliff config by @flaviodelgrosso
 - Release pushapp-cli version 1.2.0 by @flaviodelgrosso
-- Rename get_update_info to get_package_info for clarity by @flaviodelgrosso
 - Update CHANGELOG.md and add cliff.toml configuration by @flaviodelgrosso
-- Move update check log to check_updates function by @flaviodelgrosso
-- Readme update by @flaviodelgrosso
-- Optimize check_updates code readability and performance by @flaviodelgrosso
-- Update README by @flaviodelgrosso
-- Improve version parsing and error handling in PackageInfo display by @flaviodelgrosso
 
 ## [1.1.1] - 2024-10-02
 
-### Changed
-- Release pushapp-cli version 1.1.1 by @flaviodelgrosso
+### <!-- 2 -->🚜 Refactor
 - Detect package manager from package json field by @flaviodelgrosso
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+- Release pushapp-cli version 1.1.1 by @flaviodelgrosso
 - Readme update by @flaviodelgrosso
 
 ## [1.1.0] - 2024-10-02
 
-### Added
-- Add CHANGELOG.md by @flaviodelgrosso
+### <!-- 0 -->🚀 Features
 - Add --dev flag to update only dev deps by @flaviodelgrosso
 - Add GitHub Actions workflow for release automation by @flaviodelgrosso
 
-### Changed
+### <!-- 1 -->🐛 Bug Fixes
+- Update badge labels in README for clarity by @flaviodelgrosso
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+- Add CHANGELOG.md by @flaviodelgrosso
 - Release pushapp-cli version 1.1.0 by @flaviodelgrosso
 - Move renovate in .github folder by @flaviodelgrosso
 - Update release workflow to include changelog and add pre-release-hook by @flaviodelgrosso
 
-### Fixed
-- Update badge labels in README for clarity by @flaviodelgrosso
-
 ## [1.0.1] - 2024-10-01
 
-### Added
+### <!-- 0 -->🚀 Features
 - Add clap by @flaviodelgrosso
 
-### Changed
+### <!-- 7 -->⚙️ Miscellaneous Tasks
 - Release pushapp-cli version 1.0.1 by @flaviodelgrosso
 
 ## [1.0.0] - 2024-10-01
 
-### Changed
-- 🚀 first commit by @flaviodelgrosso
-
-[1.2.1]: https://github.com/flaviodelgrosso/pushapp/compare/v1.2.0..1.2.1
+[1.3.0]: https://github.com/flaviodelgrosso/pushapp/compare/v1.2.1..1.3.0
+[1.2.1]: https://github.com/flaviodelgrosso/pushapp/compare/v1.2.0..v1.2.1
 [1.2.0]: https://github.com/flaviodelgrosso/pushapp/compare/v1.1.1..v1.2.0
 [1.1.1]: https://github.com/flaviodelgrosso/pushapp/compare/v1.1.0..v1.1.1
 [1.1.0]: https://github.com/flaviodelgrosso/pushapp/compare/v1.0.1..v1.1.0

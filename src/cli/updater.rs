@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use colored::Colorize;
-use futures::{future::join_all, stream::FuturesUnordered};
+use futures::{stream::FuturesUnordered, StreamExt};
 use semver::{Version, VersionReq};
 use tokio::task::{self, JoinHandle};
 
@@ -44,7 +44,7 @@ impl UpdateChecker {
       format!("📦 Found {} dependencies.", tasks.len()).bright_green()
     );
 
-    let updatable_packages = self.process_update_results(tasks).await;
+    let updatable_packages = self.process_update_stream(tasks).await;
     self.handle_updatable_packages(updatable_packages).await
   }
 
@@ -73,23 +73,24 @@ impl UpdateChecker {
       .collect()
   }
 
-  async fn process_update_results(
+  async fn process_update_stream(
     &self,
-    tasks: FuturesUnordered<JoinHandle<Option<PackageInfo>>>,
+    mut tasks: FuturesUnordered<JoinHandle<Option<PackageInfo>>>,
   ) -> Vec<PackageInfo> {
-    // Use join_all to await all the task concurrently
-    join_all(tasks)
-      .await
-      .into_iter()
-      .filter_map(|res| match res {
-        Ok(Some(result)) => Some(result),
-        Ok(None) => None,
+    let mut pkg_infos = Vec::new();
+
+    // Process each task as it completes
+    while let Some(task) = tasks.next().await {
+      match task {
+        Ok(Some(pkg_info)) => pkg_infos.push(pkg_info),
+        Ok(None) => {} // Skip None results
         Err(e) => {
           eprintln!("❌ Task failed to execute: {e}");
-          None
         }
-      })
-      .collect()
+      }
+    }
+
+    pkg_infos
   }
 
   async fn handle_updatable_packages(

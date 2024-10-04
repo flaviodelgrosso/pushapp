@@ -2,7 +2,7 @@ use anyhow::Result;
 use reqwest::Client;
 use serde::Deserialize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[allow(clippy::module_name_repetitions)]
 pub struct RegistryClient {
   pub client: Client,

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use colored::Colorize;
 use futures::future::join_all;
@@ -16,7 +18,7 @@ use super::{
 pub struct UpdateChecker {
   args: Args,
   pkg_manager: PackageJsonManager,
-  client: RegistryClient,
+  client: Arc<RegistryClient>,
 }
 
 impl UpdateChecker {
@@ -24,7 +26,7 @@ impl UpdateChecker {
     Self {
       args,
       pkg_manager,
-      client: RegistryClient::new(),
+      client: Arc::new(RegistryClient::new()),
     }
   }
 
@@ -51,9 +53,9 @@ impl UpdateChecker {
       .pkg_manager
       .all_deps_iter(&self.args)
       .map(|(name, version)| {
-        let client = self.client.clone();
-        let name = name.clone();
-        let version = version.clone();
+        let client = Arc::clone(&self.client);
+        let name = name.to_string();
+        let version = version.to_string();
         task::spawn(async move {
           match get_package_info(&client, &name, &version).await {
             Ok(Some(info)) => Some(info),
@@ -122,7 +124,7 @@ impl UpdateChecker {
 }
 
 async fn get_package_info(
-  client: &RegistryClient,
+  client: &Arc<RegistryClient>,
   name: &str,
   current_version: &str,
 ) -> Result<Option<PackageInfo>> {

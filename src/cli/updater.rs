@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use colored::Colorize;
-use futures::future::join_all;
+use futures::{future::join_all, stream::FuturesUnordered};
 use semver::{Version, VersionReq};
 use tokio::task::{self, JoinHandle};
 
@@ -48,7 +48,7 @@ impl UpdateChecker {
     self.handle_updatable_packages(updatable_packages).await
   }
 
-  fn fetch_updates(&self) -> Vec<JoinHandle<Option<PackageInfo>>> {
+  fn fetch_updates(&self) -> FuturesUnordered<JoinHandle<Option<PackageInfo>>> {
     self
       .pkg_manager
       .all_deps_iter(&self.args)
@@ -75,7 +75,7 @@ impl UpdateChecker {
 
   async fn process_update_results(
     &self,
-    tasks: Vec<JoinHandle<Option<PackageInfo>>>,
+    tasks: FuturesUnordered<JoinHandle<Option<PackageInfo>>>,
   ) -> Vec<PackageInfo> {
     // Use join_all to await all the task concurrently
     join_all(tasks)

@@ -17,11 +17,11 @@
 - [x] Autocomplete
 - [x] Colored updatable packages based on semver diff
 - [x] CLI utility flags
+- [x] Check global packages
 
 ## Roadmap
 
 - [ ] Monorepo support ⚠️
-- [ ] Check global packages ⚠️
 - [ ] Single packages update with filters ⚠️
 - [ ] Non-interactive mode with different display formatting and infos (publish time, semver grouping ) ⚠️
 
@@ -43,6 +43,7 @@ pushapp
 
 | Option                              | Description                          |
 |-------------------------------------|--------------------------------------|
+| `-g`, `--global`                    | Check global packages                |
 | `-d`, `--development`               | Check only `devDependencies`         |
 | `-p`, `--production`                | Check only `dependencies`            |
 | `-o`, `--optional`                  | Check only `optionalDependencies`    |

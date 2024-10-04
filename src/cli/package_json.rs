@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
-use tokio::process::Command;
+use std::process::Command;
 
 use super::{
   args::Args,
@@ -23,6 +23,16 @@ pub struct PackageJson {
   pub dev_dependencies: Option<PackageDependencies>,
   pub optional_dependencies: Option<PackageDependencies>,
   pub package_manager: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct GlobalPackage {
+  pub version: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct GlobalList {
+  pub dependencies: HashMap<String, GlobalPackage>,
 }
 
 #[derive(Debug, Default)]
@@ -63,69 +73,89 @@ impl PackageJsonManager {
     }
   }
 
-  pub fn all_deps_iter(&self, args: &Args) -> impl Iterator<Item = (&String, &String)> {
-    // Build a vector of the selected dependencies based on CLI arguments
-    let mut selected_deps: Vec<&Option<PackageDependencies>> = Vec::new();
+  pub fn get_local_deps(&self, args: &Args) -> PackageDependencies {
+    let mut combined_deps = PackageDependencies::new();
 
+    // Apply logic based on the provided flags
     if args.production || (!args.development && !args.optional) {
-      selected_deps.push(&self.json.dependencies);
+      if let Some(dependencies) = &self.json.dependencies {
+        combined_deps.extend(dependencies.clone());
+      }
     }
 
     if args.development || (!args.production && !args.optional) {
-      selected_deps.push(&self.json.dev_dependencies);
+      if let Some(dev_dependencies) = &self.json.dev_dependencies {
+        combined_deps.extend(dev_dependencies.clone());
+      }
     }
 
     if args.optional || (!args.production && !args.development) {
-      selected_deps.push(&self.json.optional_dependencies);
+      if let Some(optional_dependencies) = &self.json.optional_dependencies {
+        combined_deps.extend(optional_dependencies.clone());
+      }
     }
 
-    selected_deps
-      .into_iter()
-      .flat_map(|deps_option| deps_option.iter().flat_map(|deps| deps.iter()))
+    combined_deps
+  }
+
+  pub fn get_global_deps() -> Result<PackageDependencies> {
+    // Run the `npm list -g --depth=0` command to get the global packages and their versions
+    let output = Command::new("npm")
+      .arg("ls")
+      .arg("--json")
+      .arg("-g")
+      .arg("--depth=0")
+      .output()?;
+
+    let output_str = String::from_utf8(output.stdout)?;
+
+    let global_list: GlobalList = serde_json::from_str(&output_str)?;
+
+    let packages = global_list
+      .dependencies
+      .iter()
+      .map(|(name, package)| (name.clone(), package.version.clone()))
+      .collect();
+
+    Ok(packages)
   }
 
   /// Detect the package manager used in the project and return it with the install command.
-  fn detect_package_manager(&self) -> (String, String) {
-    let package_manager = self.json.package_manager.as_deref().unwrap_or("npm");
+  fn detect_package_manager(&self, args: &Args) -> String {
+    if args.global {
+      return "npm".to_string();
+    }
+
+    let package_manager_field = self.json.package_manager.as_deref().unwrap_or("npm");
 
     // Split at '@' and get the package manager name
-    let package_manager_name = package_manager.split('@').next().unwrap_or("npm");
+    let package_manager = package_manager_field.split('@').next().unwrap_or("npm");
 
-    // Determine the command based on the package manager
-    let command = match package_manager_name {
-      "npm" => "install",
-      _ => "add",
-    };
-
-    (package_manager_name.to_string(), command.to_string())
+    package_manager.to_string()
   }
 
-  pub async fn install_deps(&self, updates: Vec<PackageInfo>) -> Result<()> {
-    let (package_manager, command) = self.detect_package_manager();
+  pub fn install_deps(&self, updates: &[PackageInfo], args: &Args) -> Result<()> {
+    let package_manager = self.detect_package_manager(args);
 
     let install_args = updates
       .iter()
       .map(|package| format!("{}@{}", package.pkg_name, package.latest_version))
       .collect::<Vec<String>>();
 
-    #[cfg(not(debug_assertions))]
-    let status = Command::new(package_manager)
-      .arg(command)
-      .args(install_args)
-      .status()
-      .await?;
+    // Determine the command based on the package manager
+    let command = match package_manager.as_str() {
+      "npm" => "install",
+      _ => "add",
+    };
 
-    #[cfg(debug_assertions)]
-    let status = Command::new("echo")
-      .arg(format!(
-        "Would have run: {} {} {}",
-        package_manager,
-        command,
-        install_args.join(" ")
-      ))
-      .status()
-      .await?;
+    let mut cmd = Command::new(package_manager);
+    cmd.arg(command).args(install_args);
 
+    if args.global {
+      cmd.arg("-g");
+    }
+
+    let status = cmd.status()?;
     if status.success() {
       println!("{}", "Packages successfully updated!".bright_green());
     } else {
@@ -172,9 +202,8 @@ mod tests {
       ..Default::default()
     };
 
-    assert_eq!(
-      manager.detect_package_manager(),
-      ("pnpm".to_owned(), "add".to_owned())
-    );
+    let args = Args::default();
+
+    assert_eq!(manager.detect_package_manager(&args), "pnpm");
   }
 }

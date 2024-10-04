@@ -12,8 +12,10 @@ async fn main() -> Result<()> {
   let args = Args::parse();
 
   let mut pkg_manager = PackageJsonManager::new();
-  pkg_manager.locate_closest()?;
-  pkg_manager.read()?;
+  if !args.global {
+    pkg_manager.locate_closest()?;
+    pkg_manager.read()?;
+  }
 
   let update_checker = UpdateChecker::new(args, pkg_manager);
   update_checker.run().await?;

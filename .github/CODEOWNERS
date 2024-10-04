@@ -1,0 +1,16 @@
+##############################################################
+#
+# List of approvers/reviewers for pushapp
+#
+##############################################################
+#
+# Get in touch with us via the Keptn Community
+#  https://github.com/keptn/community
+# 
+#
+# Learn about CODEOWNERS file format: 
+#  https://help.github.com/en/articles/about-code-owners
+#
+
+# These owners will be the default owners for everything in the repo.
+* @flaviodelgrosso

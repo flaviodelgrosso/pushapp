@@ -41,11 +41,13 @@ pushapp
 
 ## Flag options
 
-- `-d`, `--development` - Check only `devDependencies`
-- `-p`, `--production` - Check only `dependencies`
-- `-o`, `--optional` - Check only `optionalDependencies`
-- `-h`, `--help` - Display help information
-- `-V`, `--version` - Display version information
+| Option                              | Description                          |
+|-------------------------------------|--------------------------------------|
+| `-d`, `--development`               | Check only `devDependencies`         |
+| `-p`, `--production`                | Check only `dependencies`            |
+| `-o`, `--optional`                  | Check only `optionalDependencies`    |
+| `-h`, `--help`                      | Display help information             |
+| `-V`, `--version`                   | Display version information          |
 
 ## License
 

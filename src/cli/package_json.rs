@@ -10,6 +10,7 @@ use super::{
   args::Args,
   fs_utils::{find_closest_file, read_json},
   package_info::PackageInfo,
+  package_manager::{PackageManager, BUN_LOCK, NPM_LOCK, PNPM_LOCK, YARN_LOCK},
 };
 
 pub type PackageDependencies = HashMap<String, String>;
@@ -121,53 +122,51 @@ impl PackageJsonManager {
   }
 
   /// Detect the package manager used in the project and return it with the install command.
-  fn detect_package_manager(&self, args: &Args) -> Result<String> {
+  fn detect_package_manager(&self, args: &Args) -> PackageManager {
     if args.global {
-      return Ok("npm".into());
+      return PackageManager::Npm;
     }
 
     if let Some(manager) = self.get_package_manager_from_json() {
-      return Ok(manager);
+      return manager;
     }
 
-    if let Some(manager) = Self::detect_lock_file()? {
-      return Ok(manager);
+    if let Some(manager) = self.detect_lock_file() {
+      return manager;
     }
 
-    Ok("npm".into())
+    PackageManager::Npm
   }
 
-  fn get_package_manager_from_json(&self) -> Option<String> {
+  fn get_package_manager_from_json(&self) -> Option<PackageManager> {
     self
       .json
       .package_manager
       .as_ref()
-      .and_then(|pm| pm.split('@').next().map(std::convert::Into::into))
+      .and_then(|pm| pm.split('@').next().map(Into::into))
   }
 
-  fn detect_lock_file() -> Result<Option<String>> {
-    let cwd = env::current_dir()?;
-    let lock_files = [
-      ("yarn.lock", "yarn"),
-      ("package-lock.json", "npm"),
-      ("pnpm-lock.yaml", "pnpm"),
-      ("bun.lockb", "bun"),
-    ];
+  fn detect_lock_file(&self) -> Option<PackageManager> {
+    let lock_files = [NPM_LOCK, YARN_LOCK, PNPM_LOCK, BUN_LOCK];
 
-    for (lock_file, manager) in lock_files {
-      if cwd.join(lock_file).exists() {
-        return Ok(Some(manager.into()));
+    // Ensure file_path exists before proceeding
+    let file_path = self.file_path.as_ref()?;
+
+    // Iterate over lock files and check existence
+    lock_files.iter().find_map(|&lock_file| {
+      let candidate_path = file_path.with_file_name(lock_file);
+      if candidate_path.exists() {
+        Some(PackageManager::from_lock_file(lock_file))
+      } else {
+        None
       }
-    }
-
-    Ok(None)
+    })
   }
 
   pub fn install_deps(&self, updates: &[PackageInfo], args: &Args) -> Result<()> {
-    let package_manager = self.detect_package_manager(args)?;
+    let package_manager = self.detect_package_manager(args);
     let install_args = Self::construct_install_args(updates);
-
-    let command = Self::determine_install_command(&package_manager);
+    let command = PackageManager::determine_install_command(&package_manager);
 
     Self::execute_install_command(&package_manager, command, install_args, args.global)?;
 
@@ -181,20 +180,13 @@ impl PackageJsonManager {
       .collect()
   }
 
-  fn determine_install_command(package_manager: &str) -> &str {
-    match package_manager {
-      "npm" => "install",
-      _ => "add",
-    }
-  }
-
   fn execute_install_command(
-    package_manager: &str,
+    package_manager: &PackageManager,
     command: &str,
     install_args: Vec<String>,
     global: bool,
   ) -> Result<()> {
-    let mut cmd = Command::new(package_manager);
+    let mut cmd = Command::new(package_manager.to_str());
     cmd.arg(command).args(install_args);
 
     if global {
@@ -219,6 +211,7 @@ impl PackageJsonManager {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use tempfile::tempdir;
 
   #[test]
   fn test_spec_fields() {
@@ -241,7 +234,7 @@ mod tests {
   }
 
   #[test]
-  fn test_detect_package_manager() {
+  fn test_detect_package_manager_from_json() {
     let package_json = PackageJson {
       package_manager: Some("pnpm@9.10.0".to_owned()),
       ..Default::default()
@@ -254,6 +247,27 @@ mod tests {
 
     let args = Args::default();
 
-    assert_eq!(manager.detect_package_manager(&args).unwrap(), "pnpm");
+    assert_eq!(manager.detect_package_manager(&args), PackageManager::Pnpm);
+  }
+
+  #[test]
+  fn test_detect_package_manager_from_lock_file() {
+    let dir = tempdir().unwrap();
+    let lock_file = dir.path().join("pnpm-lock.yaml");
+    std::fs::write(&lock_file, "").unwrap();
+
+    let package_json = PackageJson {
+      package_manager: None,
+      ..Default::default()
+    };
+
+    let manager = PackageJsonManager {
+      file_path: Some(dir.path().join("package.json")),
+      json: package_json,
+    };
+
+    let args = Args::default();
+
+    assert_eq!(manager.detect_package_manager(&args), PackageManager::Pnpm);
   }
 }

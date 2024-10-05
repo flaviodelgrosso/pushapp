@@ -135,11 +135,8 @@ impl PackageJsonManager {
   }
 
   fn get_package_manager_from_json(&self) -> Option<PackageManager> {
-    self
-      .json
-      .package_manager
-      .as_ref()
-      .and_then(|pm| pm.split('@').next().map(Into::into))
+    let package_manager = self.json.package_manager.as_ref()?.split('@').next()?;
+    Some(PackageManager::from(package_manager))
   }
 
   fn detect_lock_file(&self) -> Option<PackageManager> {

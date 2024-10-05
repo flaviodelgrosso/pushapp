@@ -126,32 +126,52 @@ impl PackageJsonManager {
       return "npm".to_string();
     }
 
-    let package_manager_field = self.json.package_manager.as_deref().unwrap_or("npm");
-
-    // Split at '@' and get the package manager name
-    let package_manager = package_manager_field.split('@').next().unwrap_or("npm");
-
-    package_manager.to_string()
+    self
+      .json
+      .package_manager
+      .as_deref()
+      .unwrap_or("npm")
+      .split('@')
+      .next()
+      .unwrap_or("npm")
+      .to_string()
   }
 
   pub fn install_deps(&self, updates: &[PackageInfo], args: &Args) -> Result<()> {
     let package_manager = self.detect_package_manager(args);
+    let install_args = Self::construct_install_args(updates);
 
-    let install_args = updates
+    let command = Self::determine_install_command(&package_manager);
+
+    Self::execute_install_command(&package_manager, command, install_args, args.global)?;
+
+    Ok(())
+  }
+
+  fn construct_install_args(updates: &[PackageInfo]) -> Vec<String> {
+    updates
       .iter()
       .map(|package| format!("{}@{}", package.pkg_name, package.latest_version))
-      .collect::<Vec<String>>();
+      .collect()
+  }
 
-    // Determine the command based on the package manager
-    let command = match package_manager.as_str() {
+  fn determine_install_command(package_manager: &str) -> &str {
+    match package_manager {
       "npm" => "install",
       _ => "add",
-    };
+    }
+  }
 
+  fn execute_install_command(
+    package_manager: &str,
+    command: &str,
+    install_args: Vec<String>,
+    global: bool,
+  ) -> Result<()> {
     let mut cmd = Command::new(package_manager);
     cmd.arg(command).args(install_args);
 
-    if args.global {
+    if global {
       cmd.arg("-g");
     }
 
@@ -159,7 +179,11 @@ impl PackageJsonManager {
     if status.success() {
       println!("{}", "Packages successfully updated!".bright_green());
     } else {
-      anyhow::bail!("Failed to update packages");
+      anyhow::bail!(
+        "Failed to update packages using {} command for manager: {}",
+        command,
+        package_manager
+      );
     }
 
     Ok(())

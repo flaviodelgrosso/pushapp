@@ -100,28 +100,24 @@ impl PackageJsonManager {
   }
 
   pub fn get_global_deps() -> Result<PackageDependencies> {
-    // Run the `npm list -g --depth=0` command to get the global packages and their versions
+    // Run the `npm list -g --depth=0` command
     let output = Command::new("npm")
-      .arg("ls")
-      .arg("--json")
-      .arg("-g")
-      .arg("--depth=0")
+      .args(["ls", "--json", "-g", "--depth=0"])
       .output()?;
 
-    let output_str = String::from_utf8(output.stdout)?;
+    let global_list: GlobalList = serde_json::from_slice(&output.stdout)?;
 
-    let global_list: GlobalList = serde_json::from_str(&output_str)?;
-
+    // Map the dependencies to a name -> version structure
     let packages = global_list
       .dependencies
-      .iter()
-      .map(|(name, package)| (name.clone(), package.version.clone()))
+      .into_iter()
+      .map(|(name, package)| (name, package.version))
       .collect();
 
     Ok(packages)
   }
 
-  /// Detect the package manager used in the project and return it with the install command.
+  /// Detect the package manager based on the provided flags, package.json, and lock files.
   fn detect_package_manager(&self, args: &Args) -> PackageManager {
     if args.global {
       return PackageManager::Npm;

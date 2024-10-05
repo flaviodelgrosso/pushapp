@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2024-10-05
+
+### <!-- 2 -->🚜 Refactor
+- Removed --optional flag, -P flag will merge `dependencies` and `optionalDependencies` aswell. by @flaviodelgrosso in [#4](https://github.com/flaviodelgrosso/pushapp/pull/4)
+- Update struct and variable names in package_json.rs by @flaviodelgrosso
+
+### <!-- 6 -->🧪 Testing
+- Add unit tests for merge function in hashmap.rs by @flaviodelgrosso
+
+### <!-- 7 -->⚙️ Miscellaneous Tasks
+- Update release action to call build and depends on it by @flaviodelgrosso
+- Add GitHub Actions workflow for building and testing the Rust project by @flaviodelgrosso
+
 ## [1.3.1] - 2024-10-05
 
 ### <!-- 2 -->🚜 Refactor
@@ -12,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Split package manager `install_deps` fn in smaller functions by @flaviodelgrosso
 
 ### <!-- 7 -->⚙️ Miscellaneous Tasks
+- Release pushapp-cli version 1.3.1 by @flaviodelgrosso
 - Update launch.json for pushapp-cli debugging by @flaviodelgrosso
 
 ## [1.3.0] - 2024-10-04
@@ -103,7 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2024-10-01
 
-[1.3.1]: https://github.com/flaviodelgrosso/pushapp/compare/v1.3.0..1.3.1
+[1.3.2]: https://github.com/flaviodelgrosso/pushapp/compare/v1.3.1..1.3.2
+[1.3.1]: https://github.com/flaviodelgrosso/pushapp/compare/v1.3.0..v1.3.1
 [1.3.0]: https://github.com/flaviodelgrosso/pushapp/compare/v1.2.1..v1.3.0
 [1.2.1]: https://github.com/flaviodelgrosso/pushapp/compare/v1.2.0..v1.2.1
 [1.2.0]: https://github.com/flaviodelgrosso/pushapp/compare/v1.1.1..v1.2.0

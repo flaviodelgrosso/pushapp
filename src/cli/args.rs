@@ -5,14 +5,11 @@ use clap::Parser;
 #[allow(clippy::struct_excessive_bools)]
 pub struct Args {
   /// Check only "devDependencies"
-  #[clap(short, long)]
+  #[clap(short('D'), long)]
   pub development: bool,
-  /// Check only "dependencies"
-  #[clap(short, long)]
+  /// Check only "dependencies" and "optionalDependencies"
+  #[clap(short('P'), long)]
   pub production: bool,
-  /// Check only "optionalDependencies"
-  #[clap(short, long)]
-  pub optional: bool,
   /// Check global packages
   #[clap(short, long)]
   pub global: bool,

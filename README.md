@@ -24,6 +24,7 @@
 - [ ] Monorepo support ⚠️
 - [ ] Single packages update with filters ⚠️
 - [ ] Non-interactive mode with different display formatting and infos (publish time, semver grouping ) ⚠️
+- [ ] Tarball and git url dependencies support ⚠️
 
 ## Installation
 
@@ -41,14 +42,13 @@ pushapp
 
 ## Flag options
 
-| Option                              | Description                          |
-|-------------------------------------|--------------------------------------|
-| `-g`, `--global`                    | Check global packages                |
-| `-d`, `--development`               | Check only `devDependencies`         |
-| `-p`, `--production`                | Check only `dependencies`            |
-| `-o`, `--optional`                  | Check only `optionalDependencies`    |
-| `-h`, `--help`                      | Display help information             |
-| `-V`, `--version`                   | Display version information          |
+| Option                              | Description                                                   |
+|-------------------------------------|-------------------------------------------------------------- |
+| `-g`, `--global`                    | Check global packages                                         |
+| `-D`, `--development`               | Check only `devDependencies`                                  |
+| `-P`, `--production`                | Check only `dependencies and optionalDependencies`            |
+| `-h`, `--help`                      | Display help information                                      |
+| `-V`, `--version`                   | Display version information                                   |
 
 ## License
 

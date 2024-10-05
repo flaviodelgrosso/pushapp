@@ -8,9 +8,12 @@ use std::process::Command;
 
 use super::{
   args::Args,
-  fs_utils::{find_closest_file, read_json},
   package_info::PackageInfo,
   package_manager::{PackageManager, BUN_LOCK, NPM_LOCK, PNPM_LOCK, YARN_LOCK},
+};
+use crate::utils::{
+  fs::{find_closest_file, read_json},
+  hashmap::merge,
 };
 
 pub type PackageDependencies = HashMap<String, String>;
@@ -75,28 +78,25 @@ impl PackageJsonManager {
   }
 
   pub fn get_local_deps(&self, args: &Args) -> PackageDependencies {
-    let mut combined_deps = PackageDependencies::new();
+    let dependencies = if args.production {
+      // Return production dependencies
+      vec![
+        self.json.dependencies.as_ref(),
+        self.json.optional_dependencies.as_ref(),
+      ]
+    } else if args.development {
+      // Return development dependencies
+      vec![self.json.dev_dependencies.as_ref()]
+    } else {
+      // Default to all dependencies
+      vec![
+        self.json.dependencies.as_ref(),
+        self.json.dev_dependencies.as_ref(),
+        self.json.optional_dependencies.as_ref(),
+      ]
+    };
 
-    // Apply logic based on the provided flags
-    if args.production || (!args.development && !args.optional) {
-      if let Some(dependencies) = &self.json.dependencies {
-        combined_deps.extend(dependencies.clone());
-      }
-    }
-
-    if args.development || (!args.production && !args.optional) {
-      if let Some(dev_dependencies) = &self.json.dev_dependencies {
-        combined_deps.extend(dev_dependencies.clone());
-      }
-    }
-
-    if args.optional || (!args.production && !args.development) {
-      if let Some(optional_dependencies) = &self.json.optional_dependencies {
-        combined_deps.extend(optional_dependencies.clone());
-      }
-    }
-
-    combined_deps
+    merge(&dependencies)
   }
 
   pub fn get_global_deps() -> Result<PackageDependencies> {

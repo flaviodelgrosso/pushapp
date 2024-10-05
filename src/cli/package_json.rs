@@ -121,24 +121,50 @@ impl PackageJsonManager {
   }
 
   /// Detect the package manager used in the project and return it with the install command.
-  fn detect_package_manager(&self, args: &Args) -> String {
+  fn detect_package_manager(&self, args: &Args) -> Result<String> {
     if args.global {
-      return "npm".to_string();
+      return Ok("npm".into());
     }
 
+    if let Some(manager) = self.get_package_manager_from_json() {
+      return Ok(manager);
+    }
+
+    if let Some(manager) = Self::detect_lock_file()? {
+      return Ok(manager);
+    }
+
+    Ok("npm".into())
+  }
+
+  fn get_package_manager_from_json(&self) -> Option<String> {
     self
       .json
       .package_manager
       .as_deref()
-      .unwrap_or("npm")
-      .split('@')
-      .next()
-      .unwrap_or("npm")
-      .to_string()
+      .map(|pm| pm.split('@').next().unwrap().to_owned())
+  }
+
+  fn detect_lock_file() -> Result<Option<String>> {
+    let cwd = env::current_dir()?;
+    let lock_files = [
+      ("yarn.lock", "yarn"),
+      ("package-lock.json", "npm"),
+      ("pnpm-lock.yaml", "pnpm"),
+      ("bun.lockb", "bun"),
+    ];
+
+    for (lock_file, manager) in lock_files {
+      if cwd.join(lock_file).exists() {
+        return Ok(Some(manager.into()));
+      }
+    }
+
+    Ok(None)
   }
 
   pub fn install_deps(&self, updates: &[PackageInfo], args: &Args) -> Result<()> {
-    let package_manager = self.detect_package_manager(args);
+    let package_manager = self.detect_package_manager(args)?;
     let install_args = Self::construct_install_args(updates);
 
     let command = Self::determine_install_command(&package_manager);
@@ -228,6 +254,6 @@ mod tests {
 
     let args = Args::default();
 
-    assert_eq!(manager.detect_package_manager(&args), "pnpm");
+    assert_eq!(manager.detect_package_manager(&args).unwrap(), "pnpm");
   }
 }

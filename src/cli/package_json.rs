@@ -141,8 +141,8 @@ impl PackageJsonManager {
     self
       .json
       .package_manager
-      .as_deref()
-      .map(|pm| pm.split('@').next().unwrap().to_owned())
+      .as_ref()
+      .and_then(|pm| pm.split('@').next().map(std::convert::Into::into))
   }
 
   fn detect_lock_file() -> Result<Option<String>> {

@@ -27,13 +27,13 @@ pub struct PackageJson {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct GlobalPackage {
+pub struct GlobalDependency {
   pub version: String,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct GlobalList {
-  pub dependencies: HashMap<String, GlobalPackage>,
+pub struct GlobalDependencies {
+  pub dependencies: HashMap<String, GlobalDependency>,
 }
 
 #[derive(Debug, Default)]
@@ -105,10 +105,10 @@ impl PackageJsonManager {
       .args(["ls", "--json", "-g", "--depth=0"])
       .output()?;
 
-    let global_list: GlobalList = serde_json::from_slice(&output.stdout)?;
+    let global_deps: GlobalDependencies = serde_json::from_slice(&output.stdout)?;
 
     // Map the dependencies to a name -> version structure
-    let packages = global_list
+    let packages = global_deps
       .dependencies
       .into_iter()
       .map(|(name, package)| (name, package.version))

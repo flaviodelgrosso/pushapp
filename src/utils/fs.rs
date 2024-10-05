@@ -38,8 +38,8 @@ where
 
 #[cfg(test)]
 mod tests {
-  use super::super::package_json::PACKAGE_JSON_FILENAME;
   use super::*;
+  use crate::cli::package_json::PACKAGE_JSON_FILENAME;
   use std::io::Write;
   use tempfile::tempdir;
 

@@ -1,3 +1,4 @@
+use super::registry::version_target::VersionTarget;
 use clap::Parser;
 
 #[derive(Parser, Debug, Default)]
@@ -10,7 +11,13 @@ pub struct Args {
   /// Check only "dependencies" and "optionalDependencies"
   #[clap(short('P'), long)]
   pub production: bool,
-  /// Check global packages
+  /// Check global packages instead of in the current project.
   #[clap(short, long)]
   pub global: bool,
+  /// Set the registry URL
+  #[clap(long, default_value = "https://registry.npmjs.org")]
+  pub registry_url: Option<String>,
+  /// Determines the version to upgrade to: latest, minor, patch, newest
+  #[clap(short, long)]
+  pub target: Option<VersionTarget>,
 }

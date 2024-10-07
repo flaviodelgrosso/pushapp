@@ -11,7 +11,7 @@ use super::{
   package_info::{normalize_version, PackageInfo},
   package_json::{PackageDependencies, PackageJsonManager},
   prompt::display_update,
-  registry::RegistryClient,
+  registry::{version_target::VersionTarget, RegistryClient},
 };
 
 #[derive(Debug)]
@@ -64,15 +64,13 @@ impl UpdateChecker {
         let client = Arc::clone(&self.client);
         let name = name.to_string();
         let version = version.to_string();
+        let target = self.args.target.clone();
         task::spawn(async move {
-          match get_package_info(&client, &name, &version).await {
+          match UpdateChecker::get_package_info(&client, &name, &version, target).await {
             Ok(Some(info)) => Some(info),
             Ok(None) => None,
             Err(e) => {
-              eprintln!(
-                "{}",
-                format!("❌ Error checking updates for package {name}: {e}").bright_red()
-              );
+              eprintln!("{}", format!("❌ {e}").bright_red());
               None
             }
           }
@@ -120,23 +118,24 @@ impl UpdateChecker {
 
     Ok(())
   }
-}
 
-async fn get_package_info(
-  client: &Arc<RegistryClient>,
-  name: &str,
-  current_version: &str,
-) -> Result<Option<PackageInfo>> {
-  let latest_version = client.get_latest_version(name, current_version).await?;
+  async fn get_package_info(
+    client: &Arc<RegistryClient>,
+    name: &str,
+    current_version: &str,
+    target: Option<VersionTarget>,
+  ) -> Result<Option<PackageInfo>> {
+    let latest_version = client.get_package_version(name, target).await?;
 
-  if can_update(current_version, &latest_version)? {
-    Ok(Some(PackageInfo {
-      pkg_name: name.to_string(),
-      current_version: current_version.to_string(),
-      latest_version: latest_version.to_string(),
-    }))
-  } else {
-    Ok(None)
+    if can_update(current_version, &latest_version)? {
+      Ok(Some(PackageInfo {
+        pkg_name: name.to_string(),
+        current_version: current_version.to_string(),
+        latest_version: latest_version.to_string(),
+      }))
+    } else {
+      Ok(None)
+    }
   }
 }
 

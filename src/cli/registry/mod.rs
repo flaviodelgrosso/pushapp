@@ -48,16 +48,16 @@ impl RegistryClient {
     let package_url = Url::parse(&registry_url)?;
 
     let mut headers = HeaderMap::new();
-    headers.insert(
-      ACCEPT,
-      HeaderValue::from_static(
-        "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
-      ),
-    );
 
     if options.full_metadata {
-      headers.remove(ACCEPT);
       headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+    } else {
+      headers.insert(
+        ACCEPT,
+        HeaderValue::from_static(
+          "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
+        ),
+      );
     }
 
     let response = self

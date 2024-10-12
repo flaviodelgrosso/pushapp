@@ -18,6 +18,6 @@ pub struct Args {
   #[clap(long, default_value = "https://registry.npmjs.org")]
   pub registry_url: Option<String>,
   /// Determines the version to upgrade to: latest, minor, patch, newest
-  #[clap(short, long)]
+  #[clap(short, long, default_value = "latest")]
   pub target: Option<VersionTarget>,
 }

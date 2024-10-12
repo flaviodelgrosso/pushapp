@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 use version_target::VersionTarget;
 
-use super::flags::Flags;
+use super::{flags::Flags, package_info::PackageInfo, updater::can_update};
 
 #[derive(Deserialize, Serialize, Debug)]
 struct VersionData {
@@ -47,11 +47,26 @@ impl Default for RegistryClient {
 }
 
 impl RegistryClient {
-  pub async fn get_package_version(
+  pub async fn get_package_info(
     &self,
     name: &str,
+    current_version: &str,
     flags: &Flags,
-  ) -> Result<String, PackageError> {
+  ) -> Result<Option<PackageInfo>> {
+    let latest_version = self.fetch_package_version(name, flags).await?;
+
+    if can_update(current_version, &latest_version)? {
+      Ok(Some(PackageInfo {
+        pkg_name: name.to_string(),
+        current_version: current_version.to_string(),
+        latest_version: latest_version.to_string(),
+      }))
+    } else {
+      Ok(None)
+    }
+  }
+
+  async fn fetch_package_version(&self, name: &str, flags: &Flags) -> Result<String, PackageError> {
     let options = RegistryOptions {
       target: flags.target.clone(),
       registry_url: flags.registry_url.clone(),

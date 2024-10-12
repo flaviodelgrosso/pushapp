@@ -39,7 +39,7 @@ impl UpdateChecker {
       self.pkg_manager.get_local_deps()
     };
 
-    let tasks = self.fetch_updates(&deps);
+    let tasks = self.fetch_updates(deps);
     if tasks.is_empty() {
       println!("{}", "📦 No dependencies found.".bright_red());
       return Ok(());
@@ -56,17 +56,15 @@ impl UpdateChecker {
 
   fn fetch_updates(
     &self,
-    deps: &PackageDependencies,
+    deps: PackageDependencies,
   ) -> FuturesUnordered<JoinHandle<Option<PackageInfo>>> {
     deps
-      .iter()
+      .into_iter()
       .map(|(name, version)| {
         let client = self.client.clone();
         let flags = self.flags.clone();
-        let name = name.to_string();
-        let version = version.to_string();
         task::spawn(async move {
-          match UpdateChecker::get_package_info(&client, &flags, &name, &version).await {
+          match client.get_package_info(&name, &version, &flags).await {
             Ok(Some(info)) => Some(info),
             Ok(None) => None,
             Err(e) => {
@@ -118,25 +116,6 @@ impl UpdateChecker {
 
     Ok(())
   }
-
-  async fn get_package_info(
-    client: &RegistryClient,
-    flags: &Flags,
-    name: &str,
-    current_version: &str,
-  ) -> Result<Option<PackageInfo>> {
-    let latest_version = client.get_package_version(name, flags).await?;
-
-    if can_update(current_version, &latest_version)? {
-      Ok(Some(PackageInfo {
-        pkg_name: name.to_string(),
-        current_version: current_version.to_string(),
-        latest_version: latest_version.to_string(),
-      }))
-    } else {
-      Ok(None)
-    }
-  }
 }
 
 /// Determines whether an update is needed based on the version requirements and the latest version available.
@@ -152,7 +131,7 @@ impl UpdateChecker {
 /// # Returns
 /// - `true` if an update is needed.
 /// - `false` if no update is needed.
-fn can_update(current_version: &str, latest_version: &str) -> Result<bool> {
+pub fn can_update(current_version: &str, latest_version: &str) -> Result<bool> {
   // Remove any caret or tilde from current version before parsing
   let cleaned_current_version = normalize_version(current_version);
   let version_req = VersionReq::parse(cleaned_current_version)?;

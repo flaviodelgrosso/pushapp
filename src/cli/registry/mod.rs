@@ -4,21 +4,16 @@ pub mod version_target;
 
 use anyhow::Result;
 use errors::PackageError;
-use options::Options;
+use options::{RegistryClientOptions, RegistryOptions};
 use reqwest::{
   header::{HeaderMap, HeaderValue, ACCEPT},
-  Client,
+  Client, ClientBuilder,
 };
 use serde::{Deserialize, Serialize};
 use url::Url;
 use version_target::VersionTarget;
 
-#[derive(Debug)]
-#[allow(clippy::module_name_repetitions)]
-pub struct RegistryClient {
-  pub client: Client,
-  pub registry_url: String,
-}
+use super::flags::Flags;
 
 #[derive(Deserialize, Serialize, Debug)]
 struct VersionData {
@@ -27,25 +22,61 @@ struct VersionData {
   time: Option<String>,
 }
 
-impl RegistryClient {
-  pub fn new() -> Self {
-    RegistryClient {
-      client: Client::new(),
+#[derive(Debug)]
+pub struct RegistryClient {
+  pub client: Client,
+  pub registry_url: String,
+}
+
+impl Default for RegistryClient {
+  fn default() -> Self {
+    let registry_options = RegistryClientOptions::default();
+
+    let client = ClientBuilder::new()
+      .pool_max_idle_per_host(registry_options.max_sockets)
+      .timeout(std::time::Duration::from_secs(registry_options.timeout))
+      .danger_accept_invalid_certs(!registry_options.strict_ssl)
+      .build()
+      .unwrap();
+
+    Self {
+      client,
       registry_url: "https://registry.npmjs.org".to_string(),
     }
+  }
+}
+
+impl RegistryClient {
+  pub async fn get_package_version(
+    &self,
+    name: &str,
+    flags: &Flags,
+  ) -> Result<String, PackageError> {
+    let options = RegistryOptions {
+      target: flags.target.clone(),
+      registry_url: flags.registry_url.clone(),
+      ..Default::default()
+    };
+
+    let version_data = self.fetch_registry(name, options).await?;
+
+    Ok(version_data.version)
   }
 
   async fn fetch_registry(
     &self,
     name: &str,
-    options: Options,
+    options: RegistryOptions,
   ) -> Result<VersionData, PackageError> {
     let target = options.target.unwrap_or(VersionTarget::Latest);
+
     let registry_url = options
       .registry_url
-      .unwrap_or_else(|| format!("{}/{}/{}", self.registry_url, name, target.to_str()));
+      .as_deref()
+      .unwrap_or(&self.registry_url);
 
-    let package_url = Url::parse(&registry_url)?;
+    let full_url = format!("{}/{}/{}", registry_url, name, target.to_str());
+    let package_url = Url::parse(&full_url)?;
 
     let mut headers = HeaderMap::new();
 
@@ -71,21 +102,5 @@ impl RegistryClient {
       .map_err(|_| PackageError::PackageNotFound(name.to_string()))?;
 
     Ok(response)
-  }
-
-  pub async fn get_package_version(
-    &self,
-    name: &str,
-    target: Option<VersionTarget>,
-  ) -> Result<String, PackageError> {
-    let options = Options {
-      full_metadata: true,
-      target,
-      ..Default::default()
-    };
-
-    let version_data = self.fetch_registry(name, options).await?;
-
-    Ok(version_data.version)
   }
 }

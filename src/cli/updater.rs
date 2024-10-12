@@ -7,36 +7,36 @@ use semver::{Version, VersionReq};
 use tokio::task::{self, JoinHandle};
 
 use super::{
-  args::Args,
+  flags::Flags,
   package_info::{normalize_version, PackageInfo},
   package_json::{PackageDependencies, PackageJsonManager},
   prompt::display_update,
-  registry::{version_target::VersionTarget, RegistryClient},
+  registry::RegistryClient,
 };
 
 #[derive(Debug)]
 pub struct UpdateChecker {
-  args: Args,
   pkg_manager: PackageJsonManager,
   client: Arc<RegistryClient>,
+  flags: Arc<Flags>,
 }
 
 impl UpdateChecker {
-  pub fn new(args: Args, pkg_manager: PackageJsonManager) -> Self {
+  pub fn new(pkg_manager: PackageJsonManager, flags: Arc<Flags>) -> Self {
     Self {
-      args,
       pkg_manager,
-      client: Arc::new(RegistryClient::new()),
+      flags,
+      client: Arc::new(RegistryClient::default()),
     }
   }
 
   pub async fn run(&self) -> Result<()> {
     println!("🔍 {}", "Checking updates...".bright_yellow());
 
-    let deps = if self.args.global {
+    let deps = if self.flags.global {
       self::PackageJsonManager::get_global_deps()?
     } else {
-      self.pkg_manager.get_local_deps(&self.args)
+      self.pkg_manager.get_local_deps()
     };
 
     let tasks = self.fetch_updates(&deps);
@@ -61,12 +61,12 @@ impl UpdateChecker {
     deps
       .iter()
       .map(|(name, version)| {
-        let client = Arc::clone(&self.client);
+        let client = self.client.clone();
+        let flags = self.flags.clone();
         let name = name.to_string();
         let version = version.to_string();
-        let target = self.args.target.clone();
         task::spawn(async move {
-          match UpdateChecker::get_package_info(&client, &name, &version, target).await {
+          match UpdateChecker::get_package_info(&client, &flags, &name, &version).await {
             Ok(Some(info)) => Some(info),
             Ok(None) => None,
             Err(e) => {
@@ -109,7 +109,7 @@ impl UpdateChecker {
 
     match display_update(updatable_packages) {
       Some(selected) => {
-        self.pkg_manager.install_deps(&selected, &self.args)?;
+        self.pkg_manager.install_deps(&selected)?;
       }
       None => {
         println!("{}", "\nNo packages were updated.".bright_yellow());
@@ -120,12 +120,12 @@ impl UpdateChecker {
   }
 
   async fn get_package_info(
-    client: &Arc<RegistryClient>,
+    client: &RegistryClient,
+    flags: &Flags,
     name: &str,
     current_version: &str,
-    target: Option<VersionTarget>,
   ) -> Result<Option<PackageInfo>> {
-    let latest_version = client.get_package_version(name, target).await?;
+    let latest_version = client.get_package_version(name, flags).await?;
 
     if can_update(current_version, &latest_version)? {
       Ok(Some(PackageInfo {

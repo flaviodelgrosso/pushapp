@@ -5,9 +5,10 @@ use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::Arc;
 
 use super::{
-  args::Args,
+  flags::Flags,
   package_info::PackageInfo,
   package_manager::{PackageManager, BUN_LOCK, NPM_LOCK, PNPM_LOCK, YARN_LOCK},
 };
@@ -40,15 +41,18 @@ pub struct GlobalDependencies {
 }
 
 #[derive(Debug, Default)]
-#[allow(clippy::module_name_repetitions)]
 pub struct PackageJsonManager {
   pub file_path: Option<PathBuf>,
   pub json: PackageJson,
+  pub flags: Arc<Flags>,
 }
 
 impl PackageJsonManager {
-  pub fn new() -> Self {
-    PackageJsonManager::default()
+  pub fn new(flags: Arc<Flags>) -> Self {
+    Self {
+      flags,
+      ..Default::default()
+    }
   }
 
   /// Try to locate the closest `package.json` file from [current working directory][std::env::current_dir] to sys root.
@@ -77,14 +81,14 @@ impl PackageJsonManager {
     }
   }
 
-  pub fn get_local_deps(&self, args: &Args) -> PackageDependencies {
-    let dependencies = if args.production {
+  pub fn get_local_deps(&self) -> PackageDependencies {
+    let dependencies = if self.flags.production {
       // Return production dependencies
       vec![
         self.json.dependencies.as_ref(),
         self.json.optional_dependencies.as_ref(),
       ]
-    } else if args.development {
+    } else if self.flags.development {
       // Return development dependencies
       vec![self.json.dev_dependencies.as_ref()]
     } else {
@@ -118,8 +122,8 @@ impl PackageJsonManager {
   }
 
   /// Detect the package manager based on the provided flags, package.json, and lock files.
-  fn detect_package_manager(&self, args: &Args) -> PackageManager {
-    if args.global {
+  fn detect_package_manager(&self) -> PackageManager {
+    if self.flags.global {
       return PackageManager::Npm;
     }
 
@@ -156,12 +160,12 @@ impl PackageJsonManager {
     })
   }
 
-  pub fn install_deps(&self, updates: &[PackageInfo], args: &Args) -> Result<()> {
-    let package_manager = self.detect_package_manager(args);
+  pub fn install_deps(&self, updates: &[PackageInfo]) -> Result<()> {
+    let package_manager = self.detect_package_manager();
     let install_args = Self::construct_install_args(updates);
     let command = PackageManager::determine_install_command(&package_manager);
 
-    Self::execute_install_command(&package_manager, command, install_args, args.global)?;
+    self.execute_install_command(&package_manager, command, install_args)?;
 
     Ok(())
   }
@@ -174,15 +178,15 @@ impl PackageJsonManager {
   }
 
   fn execute_install_command(
+    &self,
     package_manager: &PackageManager,
     command: &str,
     install_args: Vec<String>,
-    global: bool,
   ) -> Result<()> {
     let mut cmd = Command::new(package_manager.to_str());
     cmd.arg(command).args(install_args);
 
-    if global {
+    if self.flags.global {
       cmd.arg("-g");
     }
 
@@ -238,9 +242,7 @@ mod tests {
       ..Default::default()
     };
 
-    let args = Args::default();
-
-    assert_eq!(manager.detect_package_manager(&args), PackageManager::Pnpm);
+    assert_eq!(manager.detect_package_manager(), PackageManager::Pnpm);
   }
 
   #[test]
@@ -257,10 +259,9 @@ mod tests {
     let manager = PackageJsonManager {
       file_path: Some(dir.path().join("package.json")),
       json: package_json,
+      ..Default::default()
     };
 
-    let args = Args::default();
-
-    assert_eq!(manager.detect_package_manager(&args), PackageManager::Pnpm);
+    assert_eq!(manager.detect_package_manager(), PackageManager::Pnpm);
   }
 }

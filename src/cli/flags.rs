@@ -1,10 +1,11 @@
-use super::registry::version_target::VersionTarget;
 use clap::Parser;
+
+use super::registry::version_target::VersionTarget;
 
 #[derive(Parser, Debug, Default)]
 #[command(version, about, long_about = None)]
 #[allow(clippy::struct_excessive_bools)]
-pub struct Args {
+pub struct Flags {
   /// Check only "devDependencies"
   #[clap(short('D'), long)]
   pub development: bool,

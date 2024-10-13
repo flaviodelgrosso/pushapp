@@ -45,7 +45,7 @@ pushapp
 
 | Option                              | Description                                                                                        |
 |-------------------------------------|----------------------------------------------------------------------------------------------------|
-| `-t`, `--target`                    | Determines the version to upgrade to: latest, minor, patch, pre [default: latest]                  |
+| `-t`, `--target`                    | Determines the version to upgrade to: latest, semver, major, minor, patch, pre                  |
 | `-g`, `--global`                    | Check global packages                                                                              |
 | `-D`, `--development`               | Check only `devDependencies`                                                                       |
 | `-P`, `--production`                | Check only `dependencies and optionalDependencies`                                                 |

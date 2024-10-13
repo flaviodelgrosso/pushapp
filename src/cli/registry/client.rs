@@ -8,7 +8,7 @@ use super::{RegistryClientOptions, RegistryError};
 use crate::cli::{
   flags::Flags,
   package_info::PackageInfo,
-  versions::{is_package_updatable, DistTags, VersionTarget},
+  versions::{is_package_updatable, match_dist_tag_with_target, DistTags},
 };
 
 #[derive(Debug)]
@@ -61,7 +61,7 @@ impl RegistryClient {
     flags: &Flags,
   ) -> Result<String, RegistryError> {
     let dist_tags = self.fetch_registry(name).await?;
-    let version_match = Self::match_dist_tag_with_target(dist_tags, &flags.target);
+    let version_match = match_dist_tag_with_target(dist_tags, &flags.target);
 
     Ok(version_match)
   }
@@ -84,18 +84,5 @@ impl RegistryClient {
       .map_err(|e| RegistryError::PackageNotFound(name.to_string(), e))?;
 
     Ok(response)
-  }
-
-  fn match_dist_tag_with_target(dist_tags: DistTags, target: &Option<VersionTarget>) -> String {
-    match target {
-      Some(VersionTarget::Pre) => dist_tags
-        .next
-        .or(dist_tags.canary)
-        .or(dist_tags.rc)
-        .or(dist_tags.beta)
-        .or(dist_tags.alpha)
-        .unwrap_or(dist_tags.latest),
-      _ => dist_tags.latest,
-    }
   }
 }

@@ -3,10 +3,23 @@ use nodejs_semver::{Range, Version};
 
 use crate::cli::flags::Flags;
 
-use super::VersionTarget;
+use super::{DistTags, VersionTarget};
 
 pub fn normalize_version(version: &str) -> &str {
   version.trim_start_matches(|c: char| !c.is_numeric())
+}
+
+pub fn match_dist_tag_with_target(dist_tags: DistTags, target: &Option<VersionTarget>) -> String {
+  match target {
+    Some(VersionTarget::Pre) => dist_tags
+      .next
+      .or(dist_tags.canary)
+      .or(dist_tags.rc)
+      .or(dist_tags.beta)
+      .or(dist_tags.alpha)
+      .unwrap_or(dist_tags.latest),
+    _ => dist_tags.latest,
+  }
 }
 
 pub fn is_package_updatable(

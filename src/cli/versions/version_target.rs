@@ -2,8 +2,9 @@ use core::fmt;
 
 use clap::ValueEnum;
 
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Clone, ValueEnum, Default)]
 pub enum VersionTarget {
+  #[default]
   Latest,
   Major,
   Minor,

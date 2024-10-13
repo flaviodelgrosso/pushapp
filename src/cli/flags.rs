@@ -17,5 +17,5 @@ pub struct Flags {
   pub global: bool,
   /// Determines the version to upgrade to: latest, minor, patch, pre (prerelease).
   #[clap(short, long, default_value = "latest")]
-  pub target: Option<VersionTarget>,
+  pub target: VersionTarget,
 }

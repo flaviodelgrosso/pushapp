@@ -8,7 +8,7 @@ use super::{RegistryClientOptions, RegistryError};
 use crate::cli::{
   flags::Flags,
   package_info::PackageInfo,
-  versions::{is_package_updatable, match_dist_tag_with_target, DistTags},
+  versions::{is_version_satisfying, match_dist_tag_with_target, DistTags},
 };
 
 #[derive(Debug)]
@@ -44,7 +44,7 @@ impl RegistryClient {
   ) -> Result<Option<PackageInfo>> {
     let latest_version = self.fetch_package_version(name, flags).await?;
 
-    if is_package_updatable(current_version, &latest_version, flags)? {
+    if is_version_satisfying(current_version, &latest_version, flags)? {
       Ok(Some(PackageInfo {
         pkg_name: name.to_string(),
         current_version: current_version.to_string(),

@@ -1,7 +1,8 @@
-pub mod args;
-pub mod package_info;
-pub mod package_json;
-pub mod package_manager;
-pub mod prompt;
-pub mod registry;
-pub mod updater;
+pub(super) mod flags;
+pub(super) mod package_info;
+pub(super) mod package_json;
+pub(super) mod package_manager;
+pub(super) mod prompt;
+pub(super) mod registry;
+pub(super) mod updater;
+pub(super) mod versions;

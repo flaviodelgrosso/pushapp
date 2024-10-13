@@ -23,13 +23,14 @@ pub fn is_version_satisfying(
   latest_version: &str,
   flags: &Flags,
 ) -> Result<bool> {
-  let curr_ver_range = Range::parse(current_version)?;
   let latest_ver = Version::parse(latest_version)?;
   let current_ver = Version::parse(normalize_version(current_version))?;
 
   // Check if an update can be made based on the flag
   let matching_version = match flags.target {
-    VersionTarget::Latest => curr_ver_range.satisfies(&latest_ver) && latest_ver > current_ver,
+    VersionTarget::Latest => {
+      Range::parse(current_version)?.satisfies(&latest_ver) && latest_ver > current_ver
+    }
     VersionTarget::Major => latest_ver.major > current_ver.major,
     VersionTarget::Minor => {
       latest_ver.major == current_ver.major && latest_ver.minor > current_ver.minor

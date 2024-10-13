@@ -3,12 +3,11 @@ use std::sync::Arc;
 use anyhow::Result;
 use colored::Colorize;
 use futures::{stream::FuturesUnordered, StreamExt};
-use semver::{Version, VersionReq};
 use tokio::task::{self, JoinHandle};
 
 use super::{
   flags::Flags,
-  package_info::{normalize_version, PackageInfo},
+  package_info::PackageInfo,
   package_json::{PackageDependencies, PackageJsonManager},
   prompt::display_update,
   registry::RegistryClient,
@@ -68,6 +67,7 @@ impl UpdateChecker {
             Ok(Some(info)) => Some(info),
             Ok(None) => None,
             Err(e) => {
+              #[cfg(debug_assertions)]
               eprintln!("{}", format!("❌ {e}").bright_red());
               None
             }
@@ -116,33 +116,4 @@ impl UpdateChecker {
 
     Ok(())
   }
-}
-
-/// Determines whether an update is needed based on the version requirements and the latest version available.
-///
-/// If the latest version satisfies the version requirement, an update is needed only if the latest version is greater than the current version.
-/// Otherwise, an update is always needed.
-///
-/// # Parameters
-/// - `version_req`: The version requirement that the latest version must satisfy.
-/// - `latest_ver`: The latest version available.
-/// - `current_ver`: The current version in use.
-///
-/// # Returns
-/// - `true` if an update is needed.
-/// - `false` if no update is needed.
-pub fn can_update(current_version: &str, latest_version: &str) -> Result<bool> {
-  // Remove any caret or tilde from current version before parsing
-  let cleaned_current_version = normalize_version(current_version);
-  let version_req = VersionReq::parse(cleaned_current_version)?;
-  let current_ver = Version::parse(cleaned_current_version)?;
-  let latest_ver = Version::parse(latest_version)?;
-
-  let needs_update = if version_req.matches(&latest_ver) {
-    latest_ver > current_ver // True if an update is needed
-  } else {
-    true // Update needed if latest version doesn't satisfy the current version constraint
-  };
-
-  Ok(needs_update)
 }

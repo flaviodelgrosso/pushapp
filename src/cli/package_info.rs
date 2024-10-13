@@ -1,7 +1,9 @@
 use colored::Colorize;
 use std::fmt::Display;
 
-use semver::Version;
+use nodejs_semver::Version;
+
+use super::versions::normalize_version;
 
 #[derive(Debug)]
 pub struct PackageInfo {
@@ -14,7 +16,7 @@ impl Display for PackageInfo {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     // Parse and normalize versions
     let current_ver_result = Version::parse(normalize_version(&self.current_version));
-    let latest_ver_result = Version::parse(normalize_version(&self.latest_version));
+    let latest_ver_result = Version::parse(&self.latest_version);
 
     // Handle parsing errors
     let Ok(current_ver) = current_ver_result else {
@@ -40,8 +42,4 @@ impl Display for PackageInfo {
       self.pkg_name, self.current_version, colored_latest_version
     )
   }
-}
-
-pub fn normalize_version(version: &str) -> &str {
-  version.trim_start_matches(&['^', '~'][..])
 }

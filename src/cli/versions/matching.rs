@@ -7,13 +7,8 @@ use super::{normalize_version, DistTags, VersionTarget};
 
 pub fn match_dist_tag_with_target(dist_tags: DistTags, target: &VersionTarget) -> String {
   match target {
-    // TODO: Keep the highest pre-release version
     VersionTarget::Pre => dist_tags
-      .next
-      .or(dist_tags.canary)
-      .or(dist_tags.rc)
-      .or(dist_tags.beta)
-      .or(dist_tags.alpha)
+      .highest_prerelease_version()
       .unwrap_or(dist_tags.latest),
     _ => dist_tags.latest,
   }
@@ -30,7 +25,7 @@ pub fn is_version_satisfying(
   let diff = current.diff(&latest);
 
   let matching_version = match flags.target {
-    VersionTarget::Latest => diff.is_some(),
+    VersionTarget::Latest => !current.is_prerelease() && diff.is_some(),
     VersionTarget::Semver => Range::parse(current_version)?.satisfies(&latest) && diff.is_some(),
     VersionTarget::Major => diff == Some(VersionDiff::Major),
     VersionTarget::Minor => diff == Some(VersionDiff::Minor),

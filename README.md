@@ -57,7 +57,7 @@ pushapp
 - Direct dependencies are updated to the latest stable version:
   - `1.0.0` → `1.2.0`
 - Prerelease versions are ignored by default.
-  - Use `--target pre` to include prerelease versions (e.g. `alpha`, `beta`, `rc`)
+  - Use `--target pre` to include the highest pre-release versions (e.g. `alpha`, `beta`, `rc`)
 - Choose what level to upgrade to:
   - With `--target semver`, update according to your specified [semver](https://semver.org/) version ranges:
     - `^1.1.0` → `^1.9.99`

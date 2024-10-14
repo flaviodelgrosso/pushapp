@@ -11,6 +11,11 @@ pub enum VersionTarget {
   Minor,
   Patch,
   Pre,
+  Next,
+  Canary,
+  Rc,
+  Beta,
+  Alpha,
 }
 
 impl fmt::Display for VersionTarget {
@@ -22,6 +27,11 @@ impl fmt::Display for VersionTarget {
       VersionTarget::Minor => write!(f, "minor"),
       VersionTarget::Patch => write!(f, "patch"),
       VersionTarget::Pre => write!(f, "pre"),
+      VersionTarget::Next => write!(f, "next"),
+      VersionTarget::Canary => write!(f, "canary"),
+      VersionTarget::Rc => write!(f, "rc"),
+      VersionTarget::Beta => write!(f, "beta"),
+      VersionTarget::Alpha => write!(f, "alpha"),
     }
   }
 }

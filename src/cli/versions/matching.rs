@@ -5,12 +5,15 @@ use crate::cli::flags::Flags;
 
 use super::{normalize_version, DistTags, VersionTarget};
 
-pub fn match_dist_tag_with_target(dist_tags: DistTags, target: &VersionTarget) -> String {
+pub fn match_dist_tag_with_target(dist_tags: DistTags, target: &VersionTarget) -> Option<String> {
   match target {
-    VersionTarget::Pre => dist_tags
-      .highest_prerelease_version()
-      .unwrap_or(dist_tags.latest),
-    _ => dist_tags.latest,
+    VersionTarget::Pre => dist_tags.highest_prerelease_version(),
+    VersionTarget::Next => dist_tags.next,
+    VersionTarget::Canary => dist_tags.canary,
+    VersionTarget::Rc => dist_tags.rc,
+    VersionTarget::Beta => dist_tags.beta,
+    VersionTarget::Alpha => dist_tags.alpha,
+    _ => Some(dist_tags.latest),
   }
 }
 
@@ -23,14 +26,17 @@ pub fn is_version_satisfying(
   let latest = Version::parse(latest_version)?;
 
   let diff = current.diff(&latest);
+  if diff.is_none() || latest <= current {
+    return Ok(false);
+  }
 
   let matching_version = match flags.target {
-    VersionTarget::Latest => !current.is_prerelease() && diff.is_some(),
-    VersionTarget::Semver => Range::parse(current_version)?.satisfies(&latest) && diff.is_some(),
+    VersionTarget::Latest => !current.is_prerelease(),
+    VersionTarget::Semver => Range::parse(current_version)?.satisfies(&latest),
     VersionTarget::Major => diff == Some(VersionDiff::Major),
     VersionTarget::Minor => diff == Some(VersionDiff::Minor),
     VersionTarget::Patch => diff == Some(VersionDiff::Patch),
-    VersionTarget::Pre => latest.is_prerelease() && latest > current,
+    _ => latest.is_prerelease(),
   };
 
   Ok(matching_version)

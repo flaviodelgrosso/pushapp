@@ -45,12 +45,31 @@ pushapp
 
 | Option                              | Description                                                                                        |
 |-------------------------------------|----------------------------------------------------------------------------------------------------|
-| `-t`, `--target`                    | Determines the version to upgrade to: latest, semver, major, minor, patch, pre                  |
+| `-t`, `--target`                    | Determines the version to upgrade to                                                               |
 | `-g`, `--global`                    | Check global packages                                                                              |
 | `-D`, `--development`               | Check only `devDependencies`                                                                       |
 | `-P`, `--production`                | Check only `dependencies and optionalDependencies`                                                 |
 | `-h`, `--help`                      | Display help information                                                                           |
 | `-V`, `--version`                   | Display version information                                                                        |
+
+## How dependencies updates are determined
+
+- Direct dependencies are updated to the latest stable version:
+  - `1.0.0` → `1.2.0`
+- Prerelease versions are ignored by default.
+  - Use `--target pre` to include prerelease versions (e.g. `alpha`, `beta`, `rc`)
+- Choose what level to upgrade to:
+  - With `--target semver`, update according to your specified [semver](https://semver.org/) version ranges:
+    - `^1.1.0` → `^1.9.99`
+  - With `--target major`, strictly update the major version:
+    - `1.0.0` → `2.0.0`
+  - With `--target minor`, strictly update the patch and minor versions (including major version zero):
+    - `0.1.0` → `0.2.1`
+  - With `--target patch`, strictly update the patch version (including major version zero):
+    - `0.1.0` → `0.1.2`
+  - With `--target [tag]`, update to the version published on the specified tag:
+    - Example: `0.1.0` -> `0.1.1-canary.1`
+    - The available target tags are `next`, `canary`, `rc`, `beta`, `alpha`. The default is `latest`.
 
 ## License
 

@@ -44,14 +44,15 @@ impl RegistryClient {
   ) -> Result<Option<PackageInfo>> {
     let latest_version = self.fetch_package_version(name, flags).await?;
 
-    if is_version_satisfying(current_version, &latest_version, flags)? {
-      Ok(Some(PackageInfo {
-        pkg_name: name.to_string(),
-        current_version: current_version.to_string(),
-        latest_version: latest_version.to_string(),
-      }))
-    } else {
-      Ok(None)
+    match latest_version {
+      Some(version) if is_version_satisfying(current_version, &version, flags)? => {
+        Ok(Some(PackageInfo {
+          pkg_name: name.to_string(),
+          current_version: current_version.to_string(),
+          latest_version: version,
+        }))
+      }
+      _ => Ok(None),
     }
   }
 
@@ -59,7 +60,7 @@ impl RegistryClient {
     &self,
     name: &str,
     flags: &Flags,
-  ) -> Result<String, RegistryError> {
+  ) -> Result<Option<String>, RegistryError> {
     let dist_tags = self.fetch_registry(name).await?;
     let version_match = match_dist_tag_with_target(dist_tags, &flags.target);
 

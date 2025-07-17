@@ -18,8 +18,5 @@ pub fn display_update(updatable_packages: Vec<PackageInfo>) -> Option<Vec<Packag
     .with_validator(validator)
     .prompt();
 
-  match prompt {
-    Ok(selected) => Some(selected),
-    Err(_) => None,
-  }
+  prompt.ok()
 }
